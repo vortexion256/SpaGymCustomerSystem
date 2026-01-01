@@ -1,19 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import * as XLSX from 'xlsx';
-import { bulkAddClients, checkDuplicatePhone } from '@/lib/clients';
-import { getAllBranches, branchExists } from '@/lib/branches';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { getAllBranches } from '@/lib/branches';
 
 export default function ExcelUpload({ onClientsAdded }) {
-  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [preview, setPreview] = useState(null);
   const [defaultBranch, setDefaultBranch] = useState('');
   const [branches, setBranches] = useState([]);
-  const [skippedCount, setSkippedCount] = useState(0);
-  const [skippedClients, setSkippedClients] = useState([]);
+  const [currentJobId, setCurrentJobId] = useState(null);
+  const [jobStatus, setJobStatus] = useState(null);
 
   useEffect(() => {
     loadBranches();
@@ -24,246 +23,90 @@ export default function ExcelUpload({ onClientsAdded }) {
     setBranches(branchList);
   };
 
+  // Listen to job status in real-time
+  useEffect(() => {
+    if (!currentJobId) return;
+
+    const jobRef = doc(db, 'importJobs', currentJobId);
+    const unsubscribe = onSnapshot(jobRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        setJobStatus({
+          ...data,
+          createdAt: data.createdAt?.toDate(),
+          updatedAt: data.updatedAt?.toDate(),
+        });
+        
+        if (data.status === 'completed') {
+          setSuccess(
+            data.message || 
+            `Import completed! ${data.success || 0} clients added successfully.`
+          );
+          if (onClientsAdded) {
+            onClientsAdded();
+          }
+          // Don't clear jobId immediately - let user see the results
+        } else if (data.status === 'failed') {
+          setError(`Import failed: ${data.error || 'Unknown error'}`);
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, [currentJobId, onClientsAdded]);
+
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     setError('');
     setSuccess('');
-    setLoading(true);
+    setUploading(true);
+    setJobStatus(null);
+    setCurrentJobId(null);
 
     try {
-      const reader = new FileReader();
-      
-      reader.onload = async (event) => {
-        try {
-          const data = new Uint8Array(event.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          
-          // Get first sheet
-          const firstSheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[firstSheetName];
-          
-          // Convert to JSON
-          const jsonData = XLSX.utils.sheet_to_json(worksheet);
-          
-          if (jsonData.length === 0) {
-            setError('Excel file is empty');
-            setLoading(false);
-            return;
-          }
+      // Create form data
+      const formData = new FormData();
+      formData.append('file', file);
+      if (defaultBranch) {
+        formData.append('defaultBranch', defaultBranch);
+      }
 
-          // Preview first few rows
-          setPreview(jsonData.slice(0, 5));
+      // Upload file to server
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
 
-          // Map Excel columns to our format
-          // Try to detect column names (case-insensitive)
-          const validClients = [];
-          const skipped = [];
-          const seenPhoneNumbers = new Set(); // Track phone numbers within Excel file
-          
-          for (let index = 0; index < jsonData.length; index++) {
-            const row = jsonData[index];
-            const nameKey = Object.keys(row).find(
-              key => key.toLowerCase().includes('name')
-            );
-            const phoneKey = Object.keys(row).find(
-              key => key.toLowerCase().includes('phone') || key.toLowerCase().includes('mobile')
-            );
-            const dobKey = Object.keys(row).find(
-              key => key.toLowerCase().includes('dob') || 
-                     key.toLowerCase().includes('birth') ||
-                     key.toLowerCase().includes('date')
-            );
-            const branchKey = Object.keys(row).find(
-              key => key.toLowerCase().includes('branch')
-            );
+      const result = await response.json();
 
-            const name = nameKey ? String(row[nameKey] || '').trim() : '';
-            const phoneNumber = phoneKey ? String(row[phoneKey] || '').trim() : '';
-            let dateOfBirth = '';
-            let birthMonth = null;
-            let birthDay = null;
+      if (!response.ok) {
+        setError(result.error || 'Failed to upload file');
+        setUploading(false);
+        return;
+      }
 
-            if (dobKey) {
-              const dobValue = row[dobKey];
-              if (dobValue) {
-                let parsedDate = null;
-                
-                // Handle Excel date serial number (days since 1900-01-01)
-                if (typeof dobValue === 'number') {
-                  // Excel date serial number
-                  const excelEpoch = new Date(1899, 11, 30);
-                  parsedDate = new Date(excelEpoch.getTime() + dobValue * 24 * 60 * 60 * 1000);
-                  if (isNaN(parsedDate.getTime())) {
-                    parsedDate = null;
-                  }
-                } else if (dobValue instanceof Date) {
-                  // Already a Date object
-                  parsedDate = dobValue;
-                } else {
-                  // Try to parse as date string
-                  parsedDate = new Date(dobValue);
-                  if (isNaN(parsedDate.getTime())) {
-                    // Try common date formats
-                    const dateStr = String(dobValue).trim();
-                    const dateMatch = dateStr.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
-                    if (dateMatch) {
-                      parsedDate = new Date(
-                        parseInt(dateMatch[1]),
-                        parseInt(dateMatch[2]) - 1,
-                        parseInt(dateMatch[3])
-                      );
-                    } else {
-                      parsedDate = null;
-                    }
-                  }
-                }
-
-                if (parsedDate && !isNaN(parsedDate.getTime())) {
-                  // Extract month and day (ignore year)
-                  birthMonth = parsedDate.getMonth() + 1; // JavaScript months are 0-indexed
-                  birthDay = parsedDate.getDate();
-                  
-                  // Create date with current year for storage (matching form behavior)
-                  const currentYear = new Date().getFullYear();
-                  const dateForStorage = new Date(currentYear, birthMonth - 1, birthDay);
-                  dateOfBirth = dateForStorage.toISOString().split('T')[0];
-                } else {
-                  // If we can't parse, try to extract month/day from string format like "MM/DD" or "MM-DD"
-                  const dateStr = String(dobValue).trim();
-                  const monthDayMatch = dateStr.match(/(\d{1,2})[-\/](\d{1,2})/);
-                  if (monthDayMatch) {
-                    birthMonth = parseInt(monthDayMatch[1]);
-                    birthDay = parseInt(monthDayMatch[2]);
-                    const currentYear = new Date().getFullYear();
-                    const dateForStorage = new Date(currentYear, birthMonth - 1, birthDay);
-                    if (!isNaN(dateForStorage.getTime())) {
-                      dateOfBirth = dateForStorage.toISOString().split('T')[0];
-                    }
-                  }
-                }
-              }
-            }
-
-            if (!name || !phoneNumber || !dateOfBirth) {
-              skipped.push({
-                row: index + 2,
-                name: name || 'N/A',
-                reason: 'Missing required data (Name, Phone Number, or Date of Birth)'
-              });
-              continue;
-            }
-
-            // Use branch from Excel if available, otherwise use default branch
-            const branch = branchKey ? String(row[branchKey] || '').trim() : (defaultBranch.trim() || '');
-
-            if (!branch) {
-              skipped.push({
-                row: index + 2,
-                name: name,
-                reason: 'Missing branch. Either include Branch column in Excel or set a default branch above.'
-              });
-              continue;
-            }
-
-            // Validate branch exists
-            const branchValid = await branchExists(branch);
-            if (!branchValid) {
-              skipped.push({
-                row: index + 2,
-                name: name,
-                branch: branch,
-                reason: `Branch "${branch}" does not exist`
-              });
-              continue;
-            }
-
-            // Check for duplicate phone number within Excel file
-            const phoneBranchKey = `${phoneNumber.trim()}_${branch.trim()}`;
-            if (seenPhoneNumbers.has(phoneBranchKey)) {
-              skipped.push({
-                row: index + 2,
-                name: name,
-                phoneNumber: phoneNumber,
-                reason: `Duplicate phone number "${phoneNumber}" found in Excel file (same branch)`
-              });
-              continue;
-            }
-
-            // Check for duplicate phone number in database
-            const existsInDB = await checkDuplicatePhone(phoneNumber, branch);
-            if (existsInDB) {
-              skipped.push({
-                row: index + 2,
-                name: name,
-                phoneNumber: phoneNumber,
-                reason: `Phone number "${phoneNumber}" already exists in database (same branch)`
-              });
-              continue;
-            }
-
-            // Mark this phone number as seen
-            seenPhoneNumbers.add(phoneBranchKey);
-
-            validClients.push({ 
-              name, 
-              phoneNumber, 
-              dateOfBirth, 
-              branch,
-              birthMonth,
-              birthDay
-            });
-          }
-
-          // Set skipped information
-          setSkippedCount(skipped.length);
-          setSkippedClients(skipped);
-
-          if (validClients.length === 0) {
-            setError(`No valid clients to import. All ${jsonData.length} row(s) were skipped.`);
-            setLoading(false);
-            return;
-          }
-
-          // Add valid clients to database
-          const results = await bulkAddClients(validClients);
-          const successCount = results.filter(r => r.success).length;
-          const failCount = results.filter(r => !r.success).length;
-
-          let message = `Successfully imported ${successCount} client(s).`;
-          if (failCount > 0) {
-            message += ` ${failCount} failed.`;
-          }
-          if (skipped.length > 0) {
-            message += ` ${skipped.length} row(s) skipped (invalid branches or missing data).`;
-          }
-
-          setSuccess(message);
-          setPreview(null);
-          
-          if (onClientsAdded) {
-            onClientsAdded();
-          }
-        } catch (err) {
-          setError(err.message || 'Error processing Excel file');
-          console.error(err);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      reader.readAsArrayBuffer(file);
+      if (result.success) {
+        setCurrentJobId(result.jobId);
+        setSuccess(`File uploaded successfully! Processing ${result.totalRows} rows in background. You can safely navigate away.`);
+        setUploading(false);
+        // Reset file input
+        e.target.value = '';
+      } else {
+        setError(result.error || 'Upload failed');
+        setUploading(false);
+      }
     } catch (err) {
-      setError('Error reading file');
-      setLoading(false);
-      console.error(err);
+      console.error('Upload error:', err);
+      setError('Failed to upload file. Please try again.');
+      setUploading(false);
     }
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold text-gray-800 mb-4">Upload Excel File</h2>
+    <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
+      <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4">Upload Excel File</h2>
       
       <div className="mb-4">
         <p className="text-sm text-gray-600 mb-2">
@@ -294,8 +137,8 @@ export default function ExcelUpload({ onClientsAdded }) {
           type="file"
           accept=".xlsx,.xls"
           onChange={handleFileUpload}
-          disabled={loading}
-          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          disabled={uploading}
+          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
         />
       </div>
 
@@ -311,55 +154,123 @@ export default function ExcelUpload({ onClientsAdded }) {
         </div>
       )}
 
-      {skippedCount > 0 && (
-        <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded mb-4">
-          <p className="font-semibold mb-2">⚠️ {skippedCount} row(s) skipped:</p>
-          <ul className="list-disc list-inside text-sm space-y-1 max-h-40 overflow-y-auto">
-            {skippedClients.map((item, idx) => (
-              <li key={idx}>
-                Row {item.row}: {item.name} - {item.reason}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {loading && (
-        <div className="text-center py-4">
-          <p className="text-gray-600">Processing file...</p>
-        </div>
-      )}
-
-      {preview && preview.length > 0 && (
-        <div className="mt-4">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Preview (first 5 rows):</h3>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  {Object.keys(preview[0]).map((key) => (
-                    <th key={key} className="px-3 py-2 text-left text-xs font-medium text-gray-500">
-                      {key}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {preview.map((row, idx) => (
-                  <tr key={idx}>
-                    {Object.values(row).map((value, valIdx) => (
-                      <td key={valIdx} className="px-3 py-2 text-gray-700">
-                        {String(value)}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {/* Upload Progress */}
+      {uploading && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <div className="flex items-center gap-3">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+            <p className="text-sm font-medium text-blue-900">Uploading file...</p>
           </div>
+        </div>
+      )}
+
+      {/* Job Status - Real-time Progress */}
+      {jobStatus && (
+        <div className="space-y-4 mb-4">
+          <div className={`border rounded-lg p-4 ${
+            jobStatus.status === 'completed' ? 'bg-green-50 border-green-200' :
+            jobStatus.status === 'failed' ? 'bg-red-50 border-red-200' :
+            'bg-blue-50 border-blue-200'
+          }`}>
+            <div className="flex items-center justify-between mb-2">
+              <p className={`text-sm font-medium ${
+                jobStatus.status === 'completed' ? 'text-green-900' :
+                jobStatus.status === 'failed' ? 'text-red-900' :
+                'text-blue-900'
+              }`}>
+                {jobStatus.status === 'pending' && '⏳ Waiting to start...'}
+                {jobStatus.status === 'processing' && '🔄 Validating rows...'}
+                {jobStatus.status === 'importing' && '💾 Importing to database...'}
+                {jobStatus.status === 'completed' && '✅ Import completed!'}
+                {jobStatus.status === 'failed' && '❌ Import failed'}
+              </p>
+              {jobStatus.total > 0 && (
+                <p className={`text-sm font-semibold ${
+                  jobStatus.status === 'completed' ? 'text-green-700' :
+                  jobStatus.status === 'failed' ? 'text-red-700' :
+                  'text-blue-700'
+                }`}>
+                  {jobStatus.processed?.toLocaleString() || 0} / {jobStatus.total.toLocaleString()} ({jobStatus.progress || 0}%)
+                </p>
+              )}
+            </div>
+            
+            {jobStatus.total > 0 && (
+              <div className={`w-full rounded-full h-3 overflow-hidden ${
+                jobStatus.status === 'completed' ? 'bg-green-200' :
+                jobStatus.status === 'failed' ? 'bg-red-200' :
+                'bg-blue-200'
+              }`}>
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ease-out ${
+                    jobStatus.status === 'completed' ? 'bg-green-600' :
+                    jobStatus.status === 'failed' ? 'bg-red-600' :
+                    'bg-blue-600'
+                  }`}
+                  style={{ width: `${jobStatus.progress || 0}%` }}
+                />
+              </div>
+            )}
+
+            {jobStatus.total > 0 && jobStatus.status !== 'completed' && jobStatus.status !== 'failed' && (
+              <div className="mt-2 text-xs text-gray-600">
+                {jobStatus.status === 'processing' && `Validating row ${jobStatus.processed?.toLocaleString() || 0} of ${jobStatus.total.toLocaleString()}...`}
+                {jobStatus.status === 'importing' && `Adding client ${jobStatus.processed?.toLocaleString() || 0} of ${jobStatus.total.toLocaleString()} to database...`}
+              </div>
+            )}
+
+            {/* Stats */}
+            {(jobStatus.status === 'importing' || jobStatus.status === 'completed') && (
+              <div className="mt-3 pt-3 border-t border-gray-300 grid grid-cols-3 gap-2 text-xs">
+                <div>
+                  <span className="text-gray-600">Success:</span>
+                  <span className="ml-1 font-semibold text-green-600">{jobStatus.success || 0}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Failed:</span>
+                  <span className="ml-1 font-semibold text-red-600">{jobStatus.failed || 0}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Skipped:</span>
+                  <span className="ml-1 font-semibold text-yellow-600">{jobStatus.skipped || 0}</span>
+                </div>
+              </div>
+            )}
+
+            {currentJobId && (jobStatus.status === 'processing' || jobStatus.status === 'importing') && (
+              <div className="mt-3 pt-3 border-t border-gray-300">
+                <p className="text-xs text-gray-600 mb-2">
+                  💡 <strong>You can safely close this browser tab!</strong> Processing will continue in the background.
+                </p>
+                <p className="text-xs text-gray-500">
+                  Job ID: <code className="bg-gray-100 px-1 py-0.5 rounded">{currentJobId}</code>
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Skipped Details */}
+          {jobStatus.skippedDetails && jobStatus.skippedDetails.length > 0 && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <p className="font-semibold mb-2 text-yellow-900">
+                ⚠️ {jobStatus.skippedDetails.length} row(s) skipped:
+              </p>
+              <ul className="list-disc list-inside text-sm space-y-1 max-h-40 overflow-y-auto text-yellow-800">
+                {jobStatus.skippedDetails.slice(0, 20).map((item, idx) => (
+                  <li key={idx}>
+                    Row {item.row}: {item.name} - {item.reason}
+                  </li>
+                ))}
+                {jobStatus.skippedDetails.length > 20 && (
+                  <li className="text-yellow-600 italic">
+                    ... and {jobStatus.skippedDetails.length - 20} more
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
-

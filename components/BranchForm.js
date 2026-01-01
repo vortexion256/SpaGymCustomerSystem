@@ -55,8 +55,8 @@ export default function BranchForm({ onBranchAdded }) {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Add New Branch</h2>
+      <form onSubmit={handleSubmit} className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4">Add New Branch</h2>
         
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -95,8 +95,8 @@ export default function BranchForm({ onBranchAdded }) {
       </form>
 
       {/* Existing Branches List */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">Existing Branches</h3>
+      <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
+        <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-4">Existing Branches</h3>
         {existingBranches.length === 0 ? (
           <p className="text-gray-500">No branches created yet</p>
         ) : (
@@ -115,4 +115,5 @@ export default function BranchForm({ onBranchAdded }) {
     </div>
   );
 }
+
 

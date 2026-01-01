@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { updateClient, checkDuplicatePhone } from '@/lib/clients';
 import { getAllBranches } from '@/lib/branches';
+import { normalizePhoneNumber, extractAllPhoneNumbers } from '@/lib/phoneUtils';
 
 export default function EditClientModal({ client, isOpen, onClose, onClientUpdated }) {
   const [formData, setFormData] = useState({
@@ -50,6 +51,13 @@ export default function EditClientModal({ client, isOpen, onClose, onClientUpdat
 
   const handlePhoneBlur = async () => {
     if (formData.phoneNumber.trim() && formData.phoneNumber !== client.phoneNumber) {
+      // Normalize phone number for duplicate check
+      const normalized = normalizePhoneNumber(formData.phoneNumber);
+      // Update the form with normalized value so user sees what will be stored
+      if (normalized !== formData.phoneNumber) {
+        setFormData((prev) => ({ ...prev, phoneNumber: normalized }));
+      }
+      // Check for duplicates using the original input (checkDuplicatePhone handles normalization)
       const exists = await checkDuplicatePhone(formData.phoneNumber, formData.branch, client.id);
       if (exists) {
         setDuplicateWarning(true);
@@ -82,11 +90,20 @@ export default function EditClientModal({ client, isOpen, onClose, onClientUpdat
       return;
     }
 
+    // Normalize phone number before checking duplicates and storing
+    const normalizedPhone = normalizePhoneNumber(formData.phoneNumber);
+
     // Check for duplicate phone number (excluding current client)
+    // This checks ALL numbers if multiple are provided (e.g., "0776961331/ 0758583813")
     if (formData.phoneNumber !== client.phoneNumber || formData.branch !== client.branch) {
       const exists = await checkDuplicatePhone(formData.phoneNumber, formData.branch, client.id);
       if (exists) {
-        setError('A client with this phone number already exists in the same branch. Please use a different phone number.');
+        const allNumbers = extractAllPhoneNumbers(formData.phoneNumber);
+        if (allNumbers.length > 1) {
+          setError(`One or more of these phone numbers already exist in the same branch: ${allNumbers.join(', ')}. Please use different phone numbers.`);
+        } else {
+          setError('A client with this phone number already exists in the same branch. Please use a different phone number.');
+        }
         setLoading(false);
         return;
       }
@@ -108,7 +125,7 @@ export default function EditClientModal({ client, isOpen, onClose, onClientUpdat
     try {
       const result = await updateClient(client.id, {
         name: formData.name,
-        phoneNumber: formData.phoneNumber,
+        phoneNumber: normalizedPhone, // Use normalized phone number
         birthMonth: month,
         birthDay: day,
       });
@@ -135,11 +152,11 @@ export default function EditClientModal({ client, isOpen, onClose, onClientUpdat
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-4 sm:p-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold text-gray-800">Edit Client</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Edit Client</h2>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 text-2xl"
@@ -293,4 +310,5 @@ export default function EditClientModal({ client, isOpen, onClose, onClientUpdat
     </div>
   );
 }
+
 

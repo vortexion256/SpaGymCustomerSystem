@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { addClient, checkDuplicatePhone } from '@/lib/clients';
 import { getAllBranches } from '@/lib/branches';
+import { normalizePhoneNumber, normalizePhoneNumberWithAll, extractAllPhoneNumbers } from '@/lib/phoneUtils';
 
 export default function ClientForm({ onClientAdded }) {
   const [formData, setFormData] = useState({
@@ -37,6 +38,17 @@ export default function ClientForm({ onClientAdded }) {
 
   const handlePhoneBlur = async () => {
     if (formData.phoneNumber.trim()) {
+      // Get all phone numbers (valid and invalid)
+      const phoneData = normalizePhoneNumberWithAll(formData.phoneNumber);
+      
+      // Show warning if there are unrecognized numbers
+      if (phoneData.hasUnrecognized) {
+        setError(`Warning: Some phone numbers could not be recognized: ${phoneData.invalidPhoneNumbers.join(', ')}. These will be saved to "Unrecognised Uploaded Client Data" for review.`);
+      } else {
+        setError('');
+      }
+      
+      // Check for duplicates using the original input (checkDuplicatePhone handles normalization)
       const exists = await checkDuplicatePhone(formData.phoneNumber, formData.branch);
       if (exists) {
         setDuplicateWarning(true);
@@ -91,10 +103,26 @@ export default function ClientForm({ onClientAdded }) {
     // Format as YYYY-MM-DD for storage (using current year)
     const dateOfBirth = `${currentYear}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
+    // Get all phone numbers (valid and invalid)
+    const phoneData = normalizePhoneNumberWithAll(formData.phoneNumber);
+
     // Check for duplicate phone number before submitting
+    // This checks ALL numbers if multiple are provided (e.g., "0776961331/ 0758583813")
     const exists = await checkDuplicatePhone(formData.phoneNumber, formData.branch);
     if (exists) {
-      setError('A client with this phone number already exists in the same branch. Please use a different phone number.');
+      const allNumbers = extractAllPhoneNumbers(formData.phoneNumber);
+      if (allNumbers.length > 1) {
+        setError(`One or more of these phone numbers already exist in the same branch: ${allNumbers.join(', ')}. Please use different phone numbers.`);
+      } else {
+        setError('A client with this phone number already exists in the same branch. Please use a different phone number.');
+      }
+      setLoading(false);
+      return;
+    }
+    
+    // Warn if there are unrecognized numbers
+    if (phoneData.hasUnrecognized && phoneData.validNumbers.length === 0) {
+      setError('No valid phone numbers found. The client data will be saved to "Unrecognised Uploaded Client Data" for review.');
       setLoading(false);
       return;
     }
@@ -102,13 +130,18 @@ export default function ClientForm({ onClientAdded }) {
     try {
       const result = await addClient({
         ...formData,
+        phoneNumber: formData.phoneNumber, // Pass original - addClient will normalize
         dateOfBirth,
         birthMonth: month,
         birthDay: day,
       });
       
       if (result.success) {
-        setSuccess('Client added successfully!');
+        if (phoneData.hasUnrecognized && phoneData.invalidPhoneNumbers.length > 0) {
+          setSuccess(`Client added successfully! Valid phone numbers (${phoneData.validNumbers.join(', ')}) saved. Unrecognized numbers saved to "Unrecognised Uploaded Client Data" for review.`);
+        } else {
+          setSuccess('Client added successfully!');
+        }
         setFormData({
           name: '',
           phoneNumber: '',
@@ -117,11 +150,16 @@ export default function ClientForm({ onClientAdded }) {
           branch: '',
         });
         setDuplicateWarning(false);
+        setError('');
         if (onClientAdded) {
           onClientAdded();
         }
       } else {
-        setError(result.error || 'Failed to add client');
+        if (result.unrecognized) {
+          setError(result.error || 'Client data saved to "Unrecognised Uploaded Client Data" for review.');
+        } else {
+          setError(result.error || 'Failed to add client');
+        }
       }
     } catch (err) {
       setError('An error occurred while adding the client');
@@ -132,8 +170,8 @@ export default function ClientForm({ onClientAdded }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold text-gray-800 mb-4">Add New Client</h2>
+    <form onSubmit={handleSubmit} className="space-y-4 bg-white p-4 sm:p-6 rounded-lg shadow-md">
+      <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4">Add New Client</h2>
       
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
