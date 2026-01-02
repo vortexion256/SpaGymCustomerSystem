@@ -14,10 +14,10 @@ export default function ClientList({ clients, title = 'Clients', onClientUpdated
     const normalized = normalizePhoneNumber(phoneNumber);
     if (!normalized) return null;
 
-    // Remove leading 0 and add country code for Kenya (254)
-    // Example: 0782830524 -> 254782830524
+    // Remove leading 0 and add country code for Uganda (256)
+    // Example: 0782830524 -> 256782830524
     let whatsappNumber = normalized.replace(/^0/, '');
-    whatsappNumber = `254${whatsappNumber}`;
+    whatsappNumber = `256${whatsappNumber}`;
 
     return `https://wa.me/${whatsappNumber}`;
   };
