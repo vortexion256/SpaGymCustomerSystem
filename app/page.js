@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { signOut } from '@/lib/auth';
 import ClientForm from '@/components/ClientForm';
@@ -230,7 +231,9 @@ export default function Home() {
                     onClick={() => setActiveTab('birthdays')}
                     className="p-6 rounded-lg shadow-md text-left transition-all bg-white text-gray-800 hover:bg-blue-50 hover:shadow-lg border-2 border-transparent hover:border-blue-200"
                   >
-                    <div className="text-3xl mb-2">🎂</div>
+                    <div className="mb-2">
+                      <Image src="/cake.svg" alt="Birthdays" width={36} height={36} />
+                    </div>
                     <div className="font-semibold text-base sm:text-lg">Today's Birthdays</div>
                     <div className="text-xs sm:text-sm text-gray-500 mt-1">View today's birthdays</div>
                   </button>
@@ -591,45 +594,45 @@ export default function Home() {
           {/* Today's Birthdays Tab */}
           {activeTab === 'birthdays' && (
             <div className="space-y-6">
-              {/* Branch Selector for Birthdays */}
-              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4">Select Branch</h2>
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center">
-                  <select
-                    value={selectedBranch}
-                    onChange={(e) => setSelectedBranch(e.target.value)}
-                    className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 sm:min-w-[200px]"
-                  >
-                    <option value="">All Branches</option>
-                    {branches.map((branch) => (
-                      <option key={branch.id || branch} value={branch.name || branch}>
-                        {branch.name || branch}
-                      </option>
-                    ))}
-                  </select>
-                  {selectedBranch && (
-                    <span className="text-sm text-gray-600">
-                      Showing birthdays from: <strong>{selectedBranch}</strong>
-                    </span>
-                  )}
-                </div>
-              </div>
-
               {/* Today's Birthdays Display */}
               <div className={`rounded-lg p-4 sm:p-6 shadow-md ${
                 todaysBirthdays.length > 0 
                   ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-300' 
                   : 'bg-white border border-gray-200'
               }`}>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
-                  <h2 className={`text-xl sm:text-2xl font-bold ${
-                    todaysBirthdays.length > 0 ? 'text-yellow-800' : 'text-gray-800'
-                  }`}>
-                    {todaysBirthdays.length > 0 ? '🎉' : '📅'} Today's Birthdays
-                    {todaysBirthdays.length > 0 && (
-                      <span className="ml-2 text-base sm:text-lg">({todaysBirthdays.length})</span>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className={`text-xl sm:text-2xl font-bold ${
+                        todaysBirthdays.length > 0 ? 'text-yellow-800' : 'text-gray-800'
+                      }`}>
+                        <span className="inline-flex items-center gap-2">
+                          <Image src="/cake.svg" alt="Birthdays" width={20} height={20} />
+                          Today's Birthdays
+                        </span>
+                        {todaysBirthdays.length > 0 && (
+                          <span className="ml-2 text-base sm:text-lg">({todaysBirthdays.length})</span>
+                        )}
+                      </h2>
+                      <select
+                        value={selectedBranch}
+                        onChange={(e) => setSelectedBranch(e.target.value)}
+                        className="ml-2 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white/50 backdrop-blur-sm"
+                      >
+                        <option value="">All Branches</option>
+                        {branches.map((branch) => (
+                          <option key={branch.id || branch} value={branch.name || branch}>
+                            {branch.name || branch}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {selectedBranch && (
+                      <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                        Showing birthdays from: <span className="font-medium">{selectedBranch}</span>
+                      </p>
                     )}
-                  </h2>
+                  </div>
                   <span className="text-xs sm:text-sm text-gray-600">
                     {new Date().toLocaleDateString('en-US', { 
                       weekday: 'long', 
@@ -644,7 +647,10 @@ export default function Home() {
                 ) : (
                   <div className="text-center py-8">
                     <p className="text-gray-500 text-lg">
-                      No birthdays today. Check back tomorrow! 🎂
+                      <span className="inline-flex items-center gap-2">
+                        No birthdays today. Check back tomorrow!
+                        <Image src="/cake.svg" alt="Birthday" width={18} height={18} />
+                      </span>
                     </p>
                   </div>
                 )}

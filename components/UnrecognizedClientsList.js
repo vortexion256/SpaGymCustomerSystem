@@ -5,6 +5,7 @@ import { getAllUnrecognizedClients, updateUnrecognizedClient, deleteUnrecognized
 import { addClient } from '@/lib/clients';
 import { getAllBranches } from '@/lib/branches';
 import { format } from 'date-fns';
+import Image from 'next/image';
 
 export default function UnrecognizedClientsList({ onClientUpdated }) {
   const [clients, setClients] = useState([]);
@@ -238,7 +239,7 @@ export default function UnrecognizedClientsList({ onClientUpdated }) {
                   <div className="flex gap-2 pt-2">
                     <button
                       onClick={() => handleSave(client.id)}
-                      className="flex-1 px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
+                      className="flex-1 px-3 py-2 text-sm rounded-md border border-gray-200 bg-white/70 backdrop-blur-md text-gray-800 hover:bg-white/90 hover:border-gray-300 transition-colors"
                     >
                       Save
                     </button>
@@ -249,7 +250,7 @@ export default function UnrecognizedClientsList({ onClientUpdated }) {
                         setError('');
                         setSuccess('');
                       }}
-                      className="flex-1 px-3 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm"
+                      className="flex-1 px-3 py-2 text-sm rounded-md border border-gray-200 bg-white/70 backdrop-blur-md text-gray-800 hover:bg-white/90 hover:border-gray-300 transition-colors"
                     >
                       Cancel
                     </button>
@@ -262,7 +263,10 @@ export default function UnrecognizedClientsList({ onClientUpdated }) {
                     <p className="text-sm text-gray-600 font-mono mt-1">{client.phoneNumber}</p>
                   </div>
                   <div className="flex flex-wrap gap-2 text-sm text-gray-500">
-                    <span>📅 {dobDisplay}</span>
+                    <span className="inline-flex items-center gap-1">
+                      <Image src="/cake.svg" alt="Birthday" width={16} height={16} />
+                      {dobDisplay}
+                    </span>
                     <span>🏢 {client.branch || 'N/A'}</span>
                   </div>
                   <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
@@ -271,22 +275,27 @@ export default function UnrecognizedClientsList({ onClientUpdated }) {
                   <div className="flex gap-2 pt-2 border-t border-gray-100">
                     <button
                       onClick={() => handleEdit(client)}
-                      className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+                      className="flex-1 px-3 py-2 text-sm rounded-md border border-gray-200 bg-white/70 backdrop-blur-md text-gray-800 hover:bg-white/90 hover:border-gray-300 transition-colors"
                     >
-                      Edit
+                      <span className="inline-flex items-center justify-center gap-2">
+                        <Image src="/edit.svg" alt="Edit" width={18} height={18} />
+                        Edit
+                      </span>
                     </button>
                     <button
                       onClick={() => handleApprove(client)}
                       disabled={!client.branch || !client.branch.trim()}
-                      className="flex-1 px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
+                      className="flex-1 px-3 py-2 text-sm rounded-md border border-gray-200 bg-white/70 backdrop-blur-md text-green-700 hover:bg-white/90 hover:border-gray-300 transition-colors disabled:text-gray-400 disabled:bg-white/70 disabled:cursor-not-allowed"
                     >
                       Approve
                     </button>
                     <button
                       onClick={() => handleDelete(client.id)}
-                      className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm"
+                      className="px-3 py-2 text-sm rounded-md border border-gray-200 bg-white/70 backdrop-blur-md text-red-700 hover:bg-white/90 hover:border-gray-300 transition-colors"
                     >
-                      Delete
+                      <span className="inline-flex items-center justify-center">
+                        <Image src="/bin.svg" alt="Delete" width={18} height={18} />
+                      </span>
                     </button>
                   </div>
                 </>
@@ -420,9 +429,11 @@ export default function UnrecognizedClientsList({ onClientUpdated }) {
                       <div className="flex gap-3">
                         <button
                           onClick={() => handleEdit(client)}
-                          className="text-blue-600 hover:text-blue-800 font-medium"
+                          className="text-blue-600 hover:text-blue-800 font-medium p-2 rounded hover:bg-blue-50"
+                          title="Edit client"
+                          aria-label="Edit client"
                         >
-                          Edit
+                          <Image src="/edit.svg" alt="Edit" width={18} height={18} />
                         </button>
                         <button
                           onClick={() => handleApprove(client)}
@@ -434,9 +445,11 @@ export default function UnrecognizedClientsList({ onClientUpdated }) {
                         </button>
                         <button
                           onClick={() => handleDelete(client.id)}
-                          className="text-red-600 hover:text-red-800 font-medium"
+                          className="text-red-600 hover:text-red-800 font-medium p-2 rounded hover:bg-red-50"
+                          title="Delete client"
+                          aria-label="Delete client"
                         >
-                          Delete
+                          <Image src="/bin.svg" alt="Delete" width={18} height={18} />
                         </button>
                       </div>
                     )}

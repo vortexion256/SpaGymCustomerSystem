@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { format } from 'date-fns';
+import Image from 'next/image';
 import EditClientModal from './EditClientModal';
 import { deleteClient } from '@/lib/clients';
 import { normalizePhoneNumber } from '@/lib/phoneUtils';
@@ -108,27 +109,28 @@ export default function ClientList({ clients, title = 'Clients', onClientUpdated
                 </div>
               </div>
               <div className="flex flex-wrap gap-2 text-sm text-gray-500">
-                <span>📅 {dobDisplay}</span>
+                <span className="inline-flex items-center gap-1">
+                  <Image src="/cake.svg" alt="Birthday" width={16} height={16} />
+                  {dobDisplay}
+                </span>
                 <span>🏢 {client.branch || 'N/A'}</span>
               </div>
-              <div className="flex gap-2 pt-2 border-t border-gray-100">
+              <div className="flex gap-3 mt-3 justify-center">
                 {client.phoneNumber && (
                   <>
                     <a
                       href={generateCallLink(client.phoneNumber)}
-                      className="flex-1 px-3 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 text-center"
+                      className="p-2 rounded-full hover:bg-gray-100/50 transition-colors"
                       title="Call client"
                     >
-                      📞 Call
+                      <Image src="/telephone.svg" alt="Call" width={20} height={20} />
                     </a>
                     <a
                       href={generateWhatsAppLink(client.phoneNumber)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 px-3 py-2 text-sm bg-green-500 text-white rounded-md hover:bg-green-600 text-center"
+                      className="p-2 rounded-full hover:bg-gray-100/50 transition-colors"
                       title="WhatsApp client"
                     >
-                      💬 WhatsApp
+                      <Image src="/whatsapp.svg" alt="WhatsApp" width={20} height={20} />
                     </a>
                   </>
                 )}
@@ -137,18 +139,20 @@ export default function ClientList({ clients, title = 'Clients', onClientUpdated
                     setEditingClient(client);
                     setIsModalOpen(true);
                   }}
-                  className="flex-1 px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  className="p-2 rounded-full hover:bg-gray-100/50 transition-colors"
+                  title="Edit client"
                 >
-                  Edit
+                  <Image src="/edit.svg" alt="Edit" width={20} height={20} />
                 </button>
                 <button
                   onClick={() => {
                     setDeletingClientId(client.id);
                     setShowDeleteConfirm(true);
                   }}
-                  className="flex-1 px-3 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700"
+                  className="p-2 rounded-full hover:bg-red-50 transition-colors"
+                  title="Delete client"
                 >
-                  Delete
+                  <Image src="/bin.svg" alt="Delete" width={20} height={20} className="text-red-600" />
                 </button>
               </div>
             </div>
@@ -219,19 +223,21 @@ export default function ClientList({ clients, title = 'Clients', onClientUpdated
                         <>
                           <a
                             href={generateCallLink(client.phoneNumber)}
-                            className="text-green-600 hover:text-green-800 font-medium px-2 py-1 rounded hover:bg-green-50"
+                            className="text-green-600 hover:text-green-800 font-medium p-2 rounded hover:bg-green-50"
                             title="Call client"
+                            aria-label="Call client"
                           >
-                            📞
+                            <Image src="/telephone.svg" alt="Call" width={18} height={18} />
                           </a>
                           <a
                             href={generateWhatsAppLink(client.phoneNumber)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-green-500 hover:text-green-600 font-medium px-2 py-1 rounded hover:bg-green-50"
+                            className="text-green-500 hover:text-green-600 font-medium p-2 rounded hover:bg-green-50"
                             title="WhatsApp client"
+                            aria-label="WhatsApp client"
                           >
-                            💬
+                            <Image src="/whatsapp.svg" alt="WhatsApp" width={18} height={18} />
                           </a>
                         </>
                       )}
@@ -240,18 +246,22 @@ export default function ClientList({ clients, title = 'Clients', onClientUpdated
                           setEditingClient(client);
                           setIsModalOpen(true);
                         }}
-                        className="text-blue-600 hover:text-blue-800 font-medium px-2 py-1 rounded hover:bg-blue-50"
+                        className="text-blue-600 hover:text-blue-800 font-medium p-2 rounded hover:bg-blue-50"
+                        title="Edit client"
+                        aria-label="Edit client"
                       >
-                        Edit
+                        <Image src="/edit.svg" alt="Edit" width={18} height={18} />
                       </button>
                       <button
                         onClick={() => {
                           setDeletingClientId(client.id);
                           setShowDeleteConfirm(true);
                         }}
-                        className="text-red-600 hover:text-red-800 font-medium px-2 py-1 rounded hover:bg-red-50"
+                        className="text-red-600 hover:text-red-800 font-medium p-2 rounded hover:bg-red-50"
+                        title="Delete client"
+                        aria-label="Delete client"
                       >
-                        Delete
+                        <Image src="/bin.svg" alt="Delete" width={18} height={18} />
                       </button>
                     </div>
                   </td>
@@ -324,5 +334,6 @@ export default function ClientList({ clients, title = 'Clients', onClientUpdated
       )}
     </div>
   );
+
 }
 
