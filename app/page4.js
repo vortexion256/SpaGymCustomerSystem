@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { signOut } from '@/lib/auth';
@@ -36,7 +36,6 @@ export default function Home() {
   const [todaysBirthdays, setTodaysBirthdays] = useState([]);
   const [allClients, setAllClients] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [isFiltering, setIsFiltering] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
   const [selectedBranch, setSelectedBranch] = useState('');
   const [branches, setBranches] = useState([]);
@@ -65,7 +64,6 @@ export default function Home() {
 
   useEffect(() => {
     if (activeTab !== 'home') setShowAdminSection(false);
-    setCurrentPage(1);
   }, [activeTab]);
 
   // Handle search with debouncing
@@ -95,20 +93,14 @@ export default function Home() {
     return () => clearTimeout(timeoutId);
   }, [searchTerm, selectedBranch]);
 
-  const filteredBirthdays = useMemo(() => {
-    setIsFiltering(true);
-    const baseClients = selectedMonth || selectedDay || selectedBranch ? allClients : todaysBirthdays;
-    const filtered = baseClients.filter((client) => {
+  const filterClientsByBirthday = (clients) => {
+    return clients.filter((client) => {
       const monthMatch = !selectedMonth || (client.birthMonth && parseInt(client.birthMonth) === parseInt(selectedMonth));
       const dayMatch = !selectedDay || (client.birthDay && parseInt(client.birthDay) === parseInt(selectedDay));
       const branchMatch = !selectedBranch || (client.branch === selectedBranch);
       return monthMatch && dayMatch && branchMatch;
     });
-    
-    // Simulate a small delay for "processing" feel if needed, or just set it back
-    setTimeout(() => setIsFiltering(false), 100);
-    return filtered;
-  }, [allClients, todaysBirthdays, selectedMonth, selectedDay, selectedBranch]);
+  };
 
   const handleResetFilters = () => {
     setSelectedMonth('');
@@ -307,15 +299,6 @@ export default function Home() {
                   <p className="text-slate-500 mt-1">Celebrate with your customers.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                  {isFiltering && (
-                    <div className="flex items-center gap-2 text-blue-600 text-sm font-medium animate-pulse">
-                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Processing...
-                    </div>
-                  )}
                   <select
                     value={selectedBranch}
                     onChange={(e) => setSelectedBranch(e.target.value)}
@@ -345,30 +328,10 @@ export default function Home() {
               </div>
 
               <ClientList
-                clients={getPaginatedClients(filteredBirthdays)}
+                clients={filterClientsByBirthday(selectedMonth || selectedDay || selectedBranch ? allClients : todaysBirthdays)}
                 title={selectedMonth || selectedDay || selectedBranch ? "Filtered Birthdays" : "Today's Birthdays"}
                 onClientUpdated={loadData}
               />
-
-              {filteredBirthdays.length > clientsPerPage && (
-                <div className="flex justify-center items-center gap-2 mt-8">
-                  <button
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage(p => p - 1)}
-                    className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                  </button>
-                  <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Page {currentPage} of {getTotalPages(filteredBirthdays)}</span>
-                  <button
-                    disabled={currentPage === getTotalPages(filteredBirthdays)}
-                    onClick={() => setCurrentPage(p => p + 1)}
-                    className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                  </button>
-                </div>
-              )}
             </div>
           )}
 

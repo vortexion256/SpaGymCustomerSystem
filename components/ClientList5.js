@@ -181,18 +181,18 @@ export default function ClientList({ clients = [], title = 'Clients', onClientUp
                         {client.phoneNumber && (
                           <>
                             <a href={generateCallLink(client.phoneNumber)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all" title="Call">
-                              <Image src="/telephone.svg" alt="Call" width={20} height={20} className="w-5 h-5" />
+                              <Image src="/telephone.svg" alt="Call" width={18} height={18} />
                             </a>
                             <a href={generateWhatsAppLink(client.phoneNumber)} target="_blank" rel="noopener noreferrer" className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-all" title="WhatsApp">
-                              <Image src="/whatsapp.svg" alt="WhatsApp" width={20} height={20} className="w-5 h-5" />
+                              <Image src="/whatsapp.svg" alt="WhatsApp" width={18} height={18} />
                             </a>
                           </>
                         )}
                         <button onClick={() => { setEditingClient(client); setIsModalOpen(true); }} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all" title="Edit">
-                          <Image src="/edit.svg" alt="Edit" width={20} height={20} className="w-5 h-5" />
+                          <Image src="/edit.svg" alt="Edit" width={18} height={18} />
                         </button>
                         <button onClick={() => { setDeletingClientId(client.id); setShowDeleteConfirm(true); }} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-all" title="Delete">
-                          <Image src="/bin.svg" alt="Delete" width={20} height={20} className="w-5 h-5" />
+                          <Image src="/bin.svg" alt="Delete" width={18} height={18} />
                         </button>
                       </div>
                     </td>
@@ -218,7 +218,7 @@ export default function ClientList({ clients = [], title = 'Clients', onClientUp
                     </div>
                     <div className="flex gap-1">
                       <button onClick={() => { setEditingClient(client); setIsModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg transition-colors">
-                        <Image src="/edit.svg" alt="Edit" width={18} height={18} className="w-4.5 h-4.5" />
+                        <Image src="/edit.svg" alt="Edit" width={16} height={16} />
                       </button>
                     </div>
                   </div>
@@ -237,16 +237,16 @@ export default function ClientList({ clients = [], title = 'Clients', onClientUp
                       {client.phoneNumber && (
                         <>
                           <a href={generateCallLink(client.phoneNumber)} className="w-9 h-9 flex items-center justify-center bg-slate-50 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-slate-600 hover:text-blue-600 rounded-xl transition-all">
-                            <Image src="/telephone.svg" alt="Call" width={20} height={20} className="w-5 h-5" />
+                            <Image src="/telephone.svg" alt="Call" width={18} height={18} />
                           </a>
                           <a href={generateWhatsAppLink(client.phoneNumber)} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center bg-slate-50 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-slate-600 hover:text-emerald-600 rounded-xl transition-all">
-                            <Image src="/whatsapp.svg" alt="WhatsApp" width={20} height={20} className="w-5 h-5" />
+                            <Image src="/whatsapp.svg" alt="WhatsApp" width={18} height={18} />
                           </a>
                         </>
                       )}
                     </div>
                     <button onClick={() => { setDeletingClientId(client.id); setShowDeleteConfirm(true); }} className="w-9 h-9 flex items-center justify-center bg-slate-50 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-900/20 text-slate-600 hover:text-rose-600 rounded-xl transition-all">
-                      <Image src="/bin.svg" alt="Delete" width={20} height={20} className="w-5 h-5" />
+                      <Image src="/bin.svg" alt="Delete" width={18} height={18} />
                     </button>
                   </div>
                 </div>
