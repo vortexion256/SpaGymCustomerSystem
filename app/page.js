@@ -201,7 +201,7 @@ export default function Home() {
             <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="max-w-2xl">
                 <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
-                  Welcome back, <span className="text-blue-600">{user?.displayName?.split(&apos; &apos;)[0] || &apos;User&apos;}</span>
+                  Welcome back, <span className="text-blue-600">{user?.displayName?.split(' ')[0] || 'User'}</span>
                 </h1>
                 <p className="mt-4 text-lg text-slate-500 dark:text-slate-400 leading-relaxed">
                   Manage your spa and gym customers with ease. Track birthdays, handle bulk uploads, and keep your database organized.
@@ -311,7 +311,7 @@ export default function Home() {
 
               <ClientList
                 clients={filterClientsByBirthday(selectedMonth || selectedDay ? allClients : todaysBirthdays)}
-                title={selectedMonth || selectedDay ? "Filtered Birthdays" : "Today&apos;s Birthdays"}
+                title={selectedMonth || selectedDay ? "Filtered Birthdays" : "Today's Birthdays"}
                 onClientUpdated={loadData}
               />
             </div>
