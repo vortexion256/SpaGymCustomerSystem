@@ -206,7 +206,7 @@ export default function Home() {
               </button>
 
               <nav className="hidden md:flex items-center gap-1">
-                {['home', 'dashboard', 'birthdays', 'upload'].map((tab) => (
+                {['home', 'dashboard', 'birthdays'].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -271,7 +271,6 @@ export default function Home() {
                   <NavCard onClick={() => setActiveTab('dashboard')} icon="👥" title="Clients" description="Manage customer list." badge={allClients.length} />
                   <NavCard onClick={() => setActiveTab('birthdays')} icon="🎂" title="Birthdays" description="Today's celebrations." badge={birthdayBadge} />
                   <NavCard onClick={() => setActiveTab('branches')} icon="🏢" title="Branches" description="Manage locations." badge={branches.length} />
-                  <NavCard onClick={() => setActiveTab('upload')} icon="📤" title="Upload" description="Bulk data import." />
                   <NavCard onClick={() => setShowAdminSection(true)} icon="⚙️" title="Admin" description="System tools." />
                 </div>
               ) : (
@@ -281,6 +280,7 @@ export default function Home() {
                     <button onClick={() => setShowAdminSection(false)} className="text-sm font-medium text-blue-600 hover:text-blue-700">Back to main</button>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    <NavCard onClick={() => setActiveTab('upload')} icon="📤" title="Upload" description="Bulk data import." />
                     <NavCard onClick={() => setActiveTab('unrecognized')} icon="⚠️" title="Issues" description="Fix failed imports." />
                     <NavCard onClick={() => setActiveTab('history')} icon="📜" title="History" description="View upload logs." />
                   </div>
