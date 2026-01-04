@@ -51,17 +51,21 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState(1);
   const clientsPerPage = 20;
   const [showAdminSection, setShowAdminSection] = useState(false);
+  const [showBranchPrompt, setShowBranchPrompt] = useState(false);
+  const [allBirthdays, setAllBirthdays] = useState([]);
 
   const loadData = useCallback(async () => {
     const branch = selectedBranch || null;
-    const [birthdays, clients, allBranches] = await Promise.all([
+    const [birthdays, clients, allBranches, allBdays] = await Promise.all([
       getTodaysBirthdays(branch),
       getAllClients(branch),
       getAllBranches(),
+      getTodaysBirthdays(null), // Fetch all birthdays for the badge
     ]);
     setTodaysBirthdays(birthdays);
     setAllClients(clients);
     setBranches(allBranches);
+    setAllBirthdays(allBdays);
   }, [selectedBranch]);
 
   useEffect(() => {
@@ -70,8 +74,24 @@ export default function Home() {
 
   useEffect(() => {
     if (activeTab !== 'home') setShowAdminSection(false);
+    
+    if (activeTab === 'birthdays') {
+      const defaultBranch = localStorage.getItem('defaultBirthdayBranch');
+      if (defaultBranch) {
+        setSelectedBranch(defaultBranch);
+      } else {
+        setShowBranchPrompt(true);
+      }
+    }
+    
     setCurrentPage(1);
   }, [activeTab]);
+
+  const handleSetDefaultBranch = (branchName) => {
+    localStorage.setItem('defaultBirthdayBranch', branchName);
+    setSelectedBranch(branchName);
+    setShowBranchPrompt(false);
+  };
 
   // Handle search with debouncing
   useEffect(() => {
@@ -136,6 +156,19 @@ export default function Home() {
     setSearchTerm('');
     setSearchResults([]);
   };
+
+  const birthdayBadge = useMemo(() => {
+    if (allBirthdays.length === 0) return 0;
+    
+    const branchCounts = {};
+    allBirthdays.forEach(client => {
+      const b = client.branch || 'Other';
+      branchCounts[b] = (branchCounts[b] || 0) + 1;
+    });
+    
+    const counts = Object.values(branchCounts);
+    return counts.length > 0 ? counts.join(', ') : '0';
+  }, [allBirthdays]);
 
   return (
     <ProtectedRoute>
@@ -216,7 +249,7 @@ export default function Home() {
               {!showAdminSection ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                   <NavCard onClick={() => setActiveTab('dashboard')} icon="👥" title="Clients" description="Manage customer list." badge={allClients.length} />
-                  <NavCard onClick={() => setActiveTab('birthdays')} icon="🎂" title="Birthdays" description="Today's celebrations." badge={todaysBirthdays.length} />
+                  <NavCard onClick={() => setActiveTab('birthdays')} icon="🎂" title="Birthdays" description="Today's celebrations." badge={birthdayBadge} />
                   <NavCard onClick={() => setActiveTab('branches')} icon="🏢" title="Branches" description="Manage locations." badge={branches.length} />
                   <NavCard onClick={() => setActiveTab('upload')} icon="📤" title="Upload" description="Bulk data import." />
                   <NavCard onClick={() => setShowAdminSection(true)} icon="⚙️" title="Admin" description="System tools." />
@@ -307,6 +340,41 @@ export default function Home() {
 
           {activeTab === 'birthdays' && (
             <div className="space-y-8 animate-in fade-in duration-300">
+              {showBranchPrompt && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+                  <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+                    <div className="p-6 border-b border-slate-100 dark:border-slate-800">
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-white">Set Default Branch</h3>
+                      <p className="text-sm text-slate-500 mt-1">Select a branch to show birthdays for by default.</p>
+                    </div>
+                    <div className="p-4 max-h-[300px] overflow-y-auto space-y-2">
+                      <button
+                        onClick={() => handleSetDefaultBranch('')}
+                        className="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700 font-medium"
+                      >
+                        All Branches
+                      </button>
+                      {branches.map(branch => (
+                        <button
+                          key={branch.id}
+                          onClick={() => handleSetDefaultBranch(branch.name)}
+                          className="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700 font-medium"
+                        >
+                          {branch.name}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="p-4 bg-slate-50 dark:bg-slate-800/50 flex justify-end">
+                      <button
+                        onClick={() => setShowBranchPrompt(false)}
+                        className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                      >
+                        Skip for now
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                   <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Birthdays</h2>
