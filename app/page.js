@@ -16,6 +16,7 @@ import UploadHistory from '@/components/UploadHistory';
 import MembershipForm from '@/components/MembershipForm';
 import EnrollmentForm from '@/components/EnrollmentForm';
 import MembershipList from '@/components/MembershipList';
+import UserManagement from '@/components/UserManagement';
 
 const NavCard = ({ onClick, icon, title, description, badge }) => {
   return (
@@ -46,6 +47,7 @@ export default function Home() {
   const [isSearching, setIsSearching] = useState(false);
   const [isFiltering, setIsFiltering] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
+  const [gymSubTab, setGymSubTab] = useState('overview');
   const [selectedBranch, setSelectedBranch] = useState('');
   const [branches, setBranches] = useState([]);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -227,8 +229,11 @@ export default function Home() {
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-sm relative">
                     {user.displayName?.charAt(0) || user.email?.charAt(0) || 'U'}
+                    {profile?.role === 'Admin' && (
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 border-2 border-white dark:border-slate-900 rounded-full"></div>
+                    )}
                   </div>
                   <svg className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                 </button>
@@ -236,10 +241,15 @@ export default function Home() {
                 {userMenuOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)}></div>
-                    <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                      <div className="p-4 border-b border-slate-100 dark:border-slate-800">
-                        <p className="text-sm font-bold text-slate-900 dark:text-white">{user.displayName || 'User'}</p>
+                    <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-50 py-2 animate-in fade-in zoom-in-95 duration-200">
+                      <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800">
+                        <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{user.displayName || 'User'}</p>
                         <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                        <div className="mt-2 flex items-center gap-1.5">
+                          <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-[10px] font-bold rounded-md uppercase tracking-wider">
+                            {profile?.role || 'General'}
+                          </span>
+                        </div>
                       </div>
                       <div className="p-2">
                         <button
@@ -269,13 +279,15 @@ export default function Home() {
                 </p>
               </div>
 
-              {!showAdminSection ? (
+                  {!showAdminSection ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                   <NavCard onClick={() => setActiveTab('dashboard')} icon="👥" title="Clients" description="Manage customer list." badge={allClients.length} />
                   <NavCard onClick={() => setActiveTab('birthdays')} icon="🎂" title="Birthdays" description="Today's celebrations." badge={birthdayBadge} />
                   <NavCard onClick={() => setActiveTab('branches')} icon="🏢" title="Branches" description="Manage locations." badge={branches.length} />
                   <NavCard onClick={() => setActiveTab('gym')} icon="🏋️" title="GYM" description="Memberships." />
-                  <NavCard onClick={() => setShowAdminSection(true)} icon="⚙️" title="Admin" description="System tools." />
+                  {profile?.role === 'Admin' && (
+                    <NavCard onClick={() => setShowAdminSection(true)} icon="⚙️" title="Admin" description="System tools." />
+                  )}
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -287,6 +299,7 @@ export default function Home() {
                     <NavCard onClick={() => setActiveTab('upload')} icon="📤" title="Upload" description="Bulk data import." />
                     <NavCard onClick={() => setActiveTab('unrecognized')} icon="⚠️" title="Issues" description="Fix failed imports." />
                     <NavCard onClick={() => setActiveTab('history')} icon="📜" title="History" description="View upload logs." />
+                    <NavCard onClick={() => setActiveTab('users')} icon="👥" title="Users" description="Manage roles." />
                   </div>
                 </div>
               )}
@@ -516,23 +529,73 @@ export default function Home() {
             </div>
           )}
 
+          {activeTab === 'users' && (
+            <div className="space-y-8 animate-in fade-in duration-300">
+              <UserManagement />
+            </div>
+          )}
+
           {activeTab === 'gym' && (
             <div className="space-y-8 animate-in fade-in duration-300">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                  <h2 className="text-3xl font-bold text-slate-900 dark:text-white">GYM Memberships</h2>
-                  <p className="text-slate-500 mt-1">Manage membership types and client enrollments.</p>
+                  <div className="flex items-center gap-2 mb-1">
+                    {gymSubTab !== 'overview' && (
+                      <button 
+                        onClick={() => setGymSubTab('overview')}
+                        className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 transition-colors"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                      </button>
+                    )}
+                    <h2 className="text-3xl font-bold text-slate-900 dark:text-white">GYM Memberships</h2>
+                  </div>
+                  <p className="text-slate-500">
+                    {gymSubTab === 'overview' ? 'Manage membership types and client enrollments.' : 
+                     gymSubTab === 'create-type' ? 'Define new membership packages.' :
+                     gymSubTab === 'enroll' ? 'Register a client for a membership.' : 'View active gym members.'}
+                  </p>
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <MembershipForm onMembershipAdded={() => {}} />
-                <EnrollmentForm onEnrolled={() => setActiveTab('gym')} />
-              </div>
-
-              <div className="mt-12">
-                <MembershipList />
-              </div>
+              {gymSubTab === 'overview' ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <NavCard 
+                    onClick={() => setGymSubTab('create-type')} 
+                    icon="📋" 
+                    title="Membership Types" 
+                    description="Create and manage membership options." 
+                  />
+                  <NavCard 
+                    onClick={() => setGymSubTab('enroll')} 
+                    icon="✍️" 
+                    title="Enroll Client" 
+                    description="Enroll a client in a membership." 
+                  />
+                  <NavCard 
+                    onClick={() => setGymSubTab('active-members')} 
+                    icon="🏃" 
+                    title="Active Members" 
+                    description="View and manage active memberships." 
+                  />
+                </div>
+              ) : (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+                  {gymSubTab === 'create-type' && (
+                    <div className="max-w-2xl mx-auto">
+                      <MembershipForm onMembershipAdded={() => setGymSubTab('overview')} />
+                    </div>
+                  )}
+                  {gymSubTab === 'enroll' && (
+                    <div className="max-w-2xl mx-auto">
+                      <EnrollmentForm onEnrolled={() => setGymSubTab('active-members')} />
+                    </div>
+                  )}
+                  {gymSubTab === 'active-members' && (
+                    <MembershipList />
+                  )}
+                </div>
+              )}
             </div>
           )}
         </main>
