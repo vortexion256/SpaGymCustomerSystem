@@ -39,7 +39,7 @@ const NavCard = ({ onClick, icon, title, description, badge }) => {
 };
 
 export default function Home() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [todaysBirthdays, setTodaysBirthdays] = useState([]);
