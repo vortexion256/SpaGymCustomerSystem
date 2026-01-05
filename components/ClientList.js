@@ -14,7 +14,9 @@ export default function ClientList({ clients = [], totalCount, title = 'Clients'
   const canEdit = profile?.permissions?.clients?.edit !== false;
   const canDelete = profile?.permissions?.clients?.delete !== false;
   const [editingClient, setEditingClient] = useState(null);
+  const [viewingClient, setViewingClient] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [deletingClientId, setDeletingClientId] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -168,7 +170,12 @@ export default function ClientList({ clients = [], totalCount, title = 'Clients'
                 return (
                   <tr key={client.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                     <td className="px-6 py-4">
-                      <div className="font-medium text-slate-900 dark:text-white">{client.name}</div>
+                      <div className="font-medium text-slate-900 dark:text-white flex items-center gap-2">
+                        {client.name}
+                        {client.clientDeleted && (
+                          <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-bold">DELETED</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-slate-600 dark:text-slate-400 font-mono">{client.phoneNumber || 'N/A'}</div>
@@ -197,18 +204,21 @@ export default function ClientList({ clients = [], totalCount, title = 'Clients'
                             </a>
                           </>
                         )}
-		                        <div className="flex gap-1">
-		                          {canEdit && (
-		                            <button onClick={() => { setEditingClient(client); setIsModalOpen(true); }} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all" title="Edit">
-		                              <Image src="/edit.svg" alt="Edit" width={20} height={20} className="w-5 h-5" />
-		                            </button>
-		                          )}
-		                          {canDelete && (
-		                            <button onClick={() => { setDeletingClientId(client.id); setShowDeleteConfirm(true); }} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-all" title="Delete">
-		                              <Image src="/bin.svg" alt="Delete" width={20} height={20} className="w-5 h-5" />
-		                            </button>
-		                          )}
-		                        </div>
+                        <div className="flex gap-1">
+                          <button onClick={() => { setViewingClient(client); setIsViewModalOpen(true); }} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all" title="View Details">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                          </button>
+                          {canEdit && !client.clientDeleted && (
+                            <button onClick={() => { setEditingClient(client); setIsModalOpen(true); }} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all" title="Edit">
+                              <Image src="/edit.svg" alt="Edit" width={20} height={20} className="w-5 h-5" />
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button onClick={() => { setDeletingClientId(client.id); setShowDeleteConfirm(true); }} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-all" title="Delete">
+                              <Image src="/bin.svg" alt="Delete" width={20} height={20} className="w-5 h-5" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -272,16 +282,74 @@ export default function ClientList({ clients = [], totalCount, title = 'Clients'
               );
             })}
           </div>
-        )}
-      </div>
-
-      {isModalOpen && editingClient && (
+              {isModalOpen && (
         <EditClientModal
           client={editingClient}
           isOpen={isModalOpen}
-          onClose={() => { setIsModalOpen(false); setEditingClient(null); }}
+          onClose={() => {
+            setIsModalOpen(false);
+            setEditingClient(null);
+          }}
           onClientUpdated={onClientUpdated}
         />
+      )}
+
+      {isViewModalOpen && viewingClient && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">Client Details</h2>
+              <button onClick={() => setIsViewModalOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">✕</button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center text-2xl font-bold">
+                  {viewingClient.name?.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">{viewingClient.name}</h3>
+                  <p className="text-sm text-slate-500">{viewingClient.branch}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-3">
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                  <div className="text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">Phone Number</div>
+                  <div className="text-sm font-medium">{viewingClient.phoneNumber || 'N/A'}</div>
+                </div>
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                  <div className="text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">Birthday</div>
+                  <div className="text-sm font-medium">
+                    {viewingClient.birthMonth && viewingClient.birthDay 
+                      ? `${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][viewingClient.birthMonth - 1]} ${viewingClient.birthDay}`
+                      : 'N/A'}
+                  </div>
+                </div>
+                {viewingClient.nextOfKin && (
+                  <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                    <div className="text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">Next of Kin</div>
+                    <div className="text-sm font-medium">{viewingClient.nextOfKin}</div>
+                  </div>
+                )}
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                  <div className="text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">Status</div>
+                  <div className="text-sm font-medium">
+                    {viewingClient.clientDeleted ? (
+                      <span className="text-red-600 font-bold">DELETED</span>
+                    ) : (
+                      <span className="text-green-600 font-bold">ACTIVE</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsViewModalOpen(false)}
+                className="w-full py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl transition-all"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {showDeleteConfirm && (

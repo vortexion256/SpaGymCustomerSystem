@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { redeemEntitlement, getAccessLogs, logAccess } from '@/lib/memberships';
+import { redeemEntitlement, getAccessLogs, logAccess, cancelEnrollment, deleteEnrollment } from '@/lib/memberships';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function MembershipDetailsModal({ enrollment, onClose, onUpdate }) {
@@ -30,10 +30,38 @@ export default function MembershipDetailsModal({ enrollment, onClose, onUpdate }
 
   const handleLogAccess = async () => {
     setLoading(true);
-    await logAccess(enrollment.clientId, enrollment.id);
+    await logAccess(enrollment.clientId, enrollment.id, new Date(), profile ? { uid: profile.uid, displayName: profile.name, email: profile.email } : null);
     const logs = await getAccessLogs(enrollment.clientId, new Date().getFullYear());
     setAccessLogs(logs);
     setLoading(false);
+  };
+
+  const handleCancel = async () => {
+    if (confirm('Are you sure you want to cancel this membership?')) {
+      setLoading(true);
+      const result = await cancelEnrollment(enrollment.id, profile ? { uid: profile.uid, displayName: profile.name, email: profile.email } : null);
+      if (result.success) {
+        onUpdate();
+        onClose();
+      } else {
+        alert('Error: ' + result.error);
+      }
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (confirm('Are you sure you want to PERMANENTLY DELETE this membership record? This cannot be undone.')) {
+      setLoading(true);
+      const result = await deleteEnrollment(enrollment.id, profile ? { uid: profile.uid, displayName: profile.name, email: profile.email } : null);
+      if (result.success) {
+        onUpdate();
+        onClose();
+      } else {
+        alert('Error: ' + result.error);
+      }
+      setLoading(false);
+    }
   };
 
   // Enhanced calendar view logic
@@ -109,7 +137,32 @@ export default function MembershipDetailsModal({ enrollment, onClose, onUpdate }
                 {enrollment.enrolledBy?.name || 'System'}
               </div>
             </div>
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
+              <div className="text-xs text-slate-500 mb-1">Status</div>
+              <div className="font-bold capitalize">{enrollment.status || 'Active'}</div>
+            </div>
           </div>
+
+          {profile?.role === 'Admin' && (
+            <div className="flex gap-3">
+              {enrollment.status !== 'cancelled' && (
+                <button
+                  onClick={handleCancel}
+                  disabled={loading}
+                  className="flex-1 py-2 bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-xl text-sm font-bold transition-all"
+                >
+                  Cancel Membership
+                </button>
+              )}
+              <button
+                onClick={handleDelete}
+                disabled={loading}
+                className="flex-1 py-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-xl text-sm font-bold transition-all"
+              >
+                Delete Record
+              </button>
+            </div>
+          )}
 
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Entitlements</h3>

@@ -15,6 +15,7 @@ export default function EditClientModal({ client, isOpen, onClose, onClientUpdat
     birthMonth: '',
     birthDay: '',
     branch: '',
+    nextOfKin: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -31,6 +32,7 @@ export default function EditClientModal({ client, isOpen, onClose, onClientUpdat
         birthMonth: client.birthMonth || '',
         birthDay: client.birthDay || '',
         branch: client.branch || '',
+        nextOfKin: client.nextOfKin || '',
       });
       setError('');
       setSuccess('');
@@ -131,6 +133,7 @@ export default function EditClientModal({ client, isOpen, onClose, onClientUpdat
         phoneNumber: normalizedPhone, // Use normalized phone number
         birthMonth: month,
         birthDay: day,
+        nextOfKin: formData.nextOfKin,
       }, user);
       
       if (result.success) {
@@ -272,6 +275,21 @@ export default function EditClientModal({ client, isOpen, onClose, onClientUpdat
                   </select>
                 </div>
               </div>
+            </div>
+
+            <div>
+              <label htmlFor="edit-nextOfKin" className="block text-sm font-medium text-gray-700 mb-1">
+                Next of Kin
+              </label>
+              <input
+                type="text"
+                id="edit-nextOfKin"
+                name="nextOfKin"
+                value={formData.nextOfKin}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Name and Contact"
+              />
             </div>
 
             <div>

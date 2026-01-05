@@ -15,6 +15,7 @@ export default function ClientForm({ onClientAdded }) {
     birthMonth: '',
     birthDay: '',
     branch: '',
+    nextOfKin: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -105,7 +106,7 @@ export default function ClientForm({ onClientAdded }) {
       
       if (result.success) {
         setSuccess('Client added successfully!');
-        setFormData({ name: '', phoneNumber: '', birthMonth: '', birthDay: '', branch: '' });
+        setFormData({ name: '', phoneNumber: '', birthMonth: '', birthDay: '', branch: '', nextOfKin: '' });
         setDuplicateWarning(false);
         if (onClientAdded) onClientAdded();
       } else {
@@ -206,6 +207,19 @@ export default function ClientForm({ onClientAdded }) {
                 ))}
               </select>
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label htmlFor="nextOfKin" className="text-sm font-medium text-slate-700 dark:text-slate-300">Next of Kin (Optional)</label>
+            <input
+              type="text"
+              id="nextOfKin"
+              name="nextOfKin"
+              value={formData.nextOfKin}
+              onChange={handleChange}
+              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+              placeholder="Name and Contact"
+            />
           </div>
 
           <div className="space-y-1.5">
