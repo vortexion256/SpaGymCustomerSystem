@@ -7,7 +7,7 @@ import { getAllBranches } from '@/lib/branches';
 import { normalizePhoneNumber, extractAllPhoneNumbers } from '@/lib/phoneUtils';
 
 export default function EditClientModal({ client, isOpen, onClose, onClientUpdated }) {
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const isGeneralUser = profile?.role === 'General';
   const [formData, setFormData] = useState({
     name: '',
@@ -131,7 +131,7 @@ export default function EditClientModal({ client, isOpen, onClose, onClientUpdat
         phoneNumber: normalizedPhone, // Use normalized phone number
         birthMonth: month,
         birthDay: day,
-      });
+      }, user);
       
       if (result.success) {
         setSuccess('Client updated successfully!');

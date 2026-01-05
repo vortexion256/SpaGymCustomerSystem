@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import { addMembershipType } from '@/lib/memberships';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function MembershipForm({ onMembershipAdded }) {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     type: '',
@@ -22,7 +24,7 @@ export default function MembershipForm({ onMembershipAdded }) {
       price: parseFloat(formData.price),
       duration: parseInt(formData.duration),
       entitlements: formData.entitlements.split(',').map(e => e.trim()).filter(e => e),
-    });
+    }, user);
 
     if (result.success) {
       setFormData({ type: '', price: '', description: '', duration: '', entitlements: '' });

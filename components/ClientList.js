@@ -10,7 +10,7 @@ import { normalizePhoneNumber } from '@/lib/phoneUtils';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function ClientList({ clients = [], totalCount, title = 'Clients', onClientUpdated }) {
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const isGeneralUser = profile?.role === 'General';
   const isManageUser = profile?.role === 'Manage';
   const isAdmin = profile?.role === 'Admin';
@@ -49,7 +49,7 @@ export default function ClientList({ clients = [], totalCount, title = 'Clients'
     if (!deletingClientId) return;
     setDeleteLoading(true);
     try {
-      await deleteClient(deletingClientId);
+      await deleteClient(deletingClientId, user);
       setShowDeleteConfirm(false);
       setDeletingClientId(null);
       if (onClientUpdated) onClientUpdated();

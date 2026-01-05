@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { addClient, checkDuplicatePhone } from '@/lib/clients';
+import { useAuth } from '@/contexts/AuthContext';
 import { getAllBranches } from '@/lib/branches';
 import { normalizePhoneNumberWithAll, extractAllPhoneNumbers } from '@/lib/phoneUtils';
 
 export default function ClientForm({ onClientAdded }) {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     phoneNumber: '',
@@ -98,7 +100,7 @@ export default function ClientForm({ onClientAdded }) {
         dateOfBirth,
         birthMonth: month,
         birthDay: day,
-      });
+      }, user);
       
       if (result.success) {
         setSuccess('Client added successfully!');

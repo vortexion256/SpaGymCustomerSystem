@@ -18,6 +18,7 @@ import EnrollmentForm from '@/components/EnrollmentForm';
 import MembershipList from '@/components/MembershipList';
 import UserManagement from '@/components/UserManagement';
 import UserProfile from '@/components/UserProfile';
+import ActionsTimeline from '@/components/ActionsTimeline';
 
 const NavCard = ({ onClick, icon, title, description, badge }) => {
   return (
@@ -290,7 +291,9 @@ export default function Home() {
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                   <NavCard onClick={() => setActiveTab('dashboard')} icon="👥" title="Clients" description="Manage customer list." badge={allClients.length} />
                   <NavCard onClick={() => setActiveTab('birthdays')} icon="🎂" title="Birthdays" description="Today's celebrations." badge={birthdayBadge} />
-                  <NavCard onClick={() => setActiveTab('branches')} icon="🏢" title="Branches" description="Manage locations." badge={branches.length} />
+                  {profile?.role === 'Admin' && profile?.permissions?.branches?.view !== false && (
+                    <NavCard onClick={() => setActiveTab('branches')} icon="🏢" title="Branches" description="Manage locations." badge={branches.length} />
+                  )}
                   <NavCard onClick={() => setActiveTab('gym')} icon="🏋️" title="GYM" description="Memberships." />
                   {profile?.role === 'Admin' && (
                     <NavCard onClick={() => setShowAdminSection(true)} icon="⚙️" title="Admin" description="System tools." />
@@ -307,7 +310,10 @@ export default function Home() {
                     <NavCard onClick={() => setActiveTab('unrecognized')} icon="⚠️" title="Issues" description="Fix failed imports." />
                     <NavCard onClick={() => setActiveTab('history')} icon="📜" title="History" description="View upload logs." />
                     {profile?.role === 'Admin' && (
-                      <NavCard onClick={() => setActiveTab('users')} icon="👥" title="Users" description="Manage roles." />
+                      <>
+                        <NavCard onClick={() => setActiveTab('users')} icon="👥" title="Users" description="Manage roles." />
+                        <NavCard onClick={() => setActiveTab('timeline')} icon="🕒" title="Timeline" description="Activity logs." />
+                      </>
                     )}
                   </div>
                 </div>
@@ -549,6 +555,12 @@ export default function Home() {
           {activeTab === 'users' && (
             <div className="space-y-8 animate-in fade-in duration-300">
               <UserManagement />
+            </div>
+          )}
+          
+          {activeTab === 'timeline' && (
+            <div className="space-y-8 animate-in fade-in duration-300">
+              <ActionsTimeline />
             </div>
           )}
 

@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { addBranch, getAllBranches } from '@/lib/branches';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function BranchForm({ onBranchAdded }) {
+  const { user } = useAuth();
   const [branchName, setBranchName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -33,7 +35,7 @@ export default function BranchForm({ onBranchAdded }) {
     }
 
     try {
-      const result = await addBranch(branchName);
+      const result = await addBranch(branchName, user);
       
       if (result.success) {
         setSuccess('Branch added successfully!');

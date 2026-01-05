@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { getMembershipTypes, enrollClient } from '@/lib/memberships';
+import { useAuth } from '@/contexts/AuthContext';
 import { searchClients } from '@/lib/clients';
 
 export default function EnrollmentForm({ onEnrolled }) {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [membershipTypes, setMembershipTypes] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -53,7 +55,7 @@ export default function EnrollmentForm({ onEnrolled }) {
       durationDays: selectedType.duration,
       entitlements: selectedType.entitlements,
       startDate: formData.startDate,
-    });
+    }, user);
 
     if (result.success) {
       setSelectedClient(null);
