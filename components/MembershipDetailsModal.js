@@ -19,10 +19,10 @@ export default function MembershipDetailsModal({ enrollment, onClose, onUpdate }
     loadLogs();
   }, [enrollment.clientId]);
 
-  const handleRedeem = async (entitlement) => {
-    if (confirm(`Redeem "${entitlement}"?`)) {
+  const handleRedeem = async (entitlementName) => {
+    if (confirm(`Redeem "${entitlementName}"?`)) {
       setLoading(true);
-      await redeemEntitlement(enrollment.id, entitlement);
+      await redeemEntitlement(enrollment.id, entitlementName);
       onUpdate();
       setLoading(false);
     }
@@ -103,28 +103,47 @@ export default function MembershipDetailsModal({ enrollment, onClose, onUpdate }
               <div className="text-xs text-slate-500 mb-1">Price</div>
               <div className="font-bold text-blue-600">${enrollment.price}</div>
             </div>
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
+              <div className="text-xs text-slate-500 mb-1">Enrolled By</div>
+              <div className="font-medium text-sm">
+                {enrollment.enrolledBy?.name || 'System'}
+              </div>
+            </div>
           </div>
 
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Entitlements</h3>
             <div className="flex flex-wrap gap-2">
               {enrollment.entitlements?.map((ent, idx) => {
-                const isRedeemed = enrollment.redeemedEntitlements?.some(r => r.name === ent);
+                // Handle both old string format and new object format
+                const entName = typeof ent === 'string' ? ent : ent.name;
+                const totalQty = typeof ent === 'string' ? 1 : ent.quantity;
+                
+                const redeemedCount = enrollment.redeemedEntitlements?.filter(r => r.name === entName).length || 0;
+                const remaining = totalQty - redeemedCount;
+                const isFullyRedeemed = remaining <= 0;
+
                 return (
-	                  <button
-	                    key={idx}
-		                    disabled={isRedeemed || loading || !canEdit}
-		                    onClick={() => handleRedeem(ent)}
-		                    className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
-		                      isRedeemed 
-		                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed line-through' 
-		                        : !canEdit
-		                          ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
-		                          : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100'
-		                    }`}
-	                  >
-	                    {ent} {isRedeemed && '✓'}
-	                  </button>
+                  <button
+                    key={idx}
+                    disabled={isFullyRedeemed || loading || !canEdit}
+                    onClick={() => handleRedeem(entName)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-2 ${
+                      isFullyRedeemed 
+                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed line-through' 
+                        : !canEdit
+                          ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
+                          : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100'
+                    }`}
+                  >
+                    <span>{entName}</span>
+                    {totalQty > 1 && (
+                      <span className="px-1.5 py-0.5 bg-white/50 dark:bg-black/20 rounded-md text-[10px]">
+                        {redeemedCount}/{totalQty}
+                      </span>
+                    )}
+                    {isFullyRedeemed && '✓'}
+                  </button>
                 );
               })}
             </div>
@@ -133,15 +152,15 @@ export default function MembershipDetailsModal({ enrollment, onClose, onUpdate }
           <div>
             <div className="flex justify-between items-center mb-3">
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">Access Calendar ({format(new Date(), 'MMMM yyyy')})</h3>
-		              {canEdit && (
-		                <button 
-		                  onClick={handleLogAccess}
-		                  disabled={loading}
-		                  className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 transition-colors"
-		                >
-		                  Log Today&apos;s Access
-		                </button>
-		              )}
+              {canEdit && (
+                <button 
+                  onClick={handleLogAccess}
+                  disabled={loading}
+                  className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Log Today&apos;s Access
+                </button>
+              )}
             </div>
             <div className="grid grid-cols-7 gap-2 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
               {renderCalendar()}

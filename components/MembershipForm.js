@@ -24,7 +24,23 @@ export default function MembershipForm({ onMembershipAdded }) {
       ...formData,
       price: parseFloat(formData.price),
       duration: parseInt(formData.duration),
-      entitlements: formData.entitlements.split(',').map(e => e.trim()).filter(e => e),
+      entitlements: formData.entitlements.split(',').map(e => {
+        const item = e.trim();
+        if (!item) return null;
+        
+        // Check for "xN" pattern (e.g., "Pool x5")
+        const match = item.match(/(.+)\s+x(\d+)$/i);
+        if (match) {
+          return {
+            name: match[1].trim(),
+            quantity: parseInt(match[2])
+          };
+        }
+        return {
+          name: item,
+          quantity: 1
+        };
+      }).filter(e => e),
     }, user);
 
     if (result.success) {
@@ -78,13 +94,13 @@ export default function MembershipForm({ onMembershipAdded }) {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Entitlements (comma separated)</label>
+          <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Entitlements (e.g. Gym, Pool x5, Sauna)</label>
           <input
             type="text"
             value={formData.entitlements}
             onChange={(e) => setFormData({ ...formData, entitlements: e.target.value })}
             className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-            placeholder="Gym, Pool, Sauna"
+            placeholder="Gym, Pool x5, Sauna"
           />
         </div>
       </div>

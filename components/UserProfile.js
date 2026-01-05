@@ -63,7 +63,17 @@ export default function UserProfile() {
             <div>
               <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Your Access Permissions</h3>
               <div className="grid grid-cols-2 gap-3">
-                {profile.permissions && Object.entries(profile.permissions).map(([category, perms]) => (
+                {profile.permissions && Object.entries(profile.permissions)
+                  .filter(([category, perms]) => {
+                    // Only show permissions for categories that are visible on the dashboard
+                    if (category === 'clients' && perms?.view === false) return false;
+                    if (category === 'birthdays' && perms?.view === false) return false;
+                    if (category === 'branches' && perms?.view === false) return false;
+                    if (category === 'gym' && perms?.view === false) return false;
+                    if (category === 'users' && perms?.view === false) return false;
+                    return true;
+                  })
+                  .map(([category, perms]) => (
                   <div key={category} className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
                     <div className="text-xs font-bold text-slate-900 dark:text-white capitalize mb-2">{category}</div>
                     <div className="flex flex-wrap gap-1">
