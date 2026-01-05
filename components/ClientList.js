@@ -282,7 +282,10 @@ export default function ClientList({ clients = [], totalCount, title = 'Clients'
               );
             })}
           </div>
-              {isModalOpen && (
+        )}
+      </div>
+
+      {isModalOpen && (
         <EditClientModal
           client={editingClient}
           isOpen={isModalOpen}
