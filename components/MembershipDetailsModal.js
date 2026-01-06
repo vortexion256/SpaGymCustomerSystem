@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { redeemEntitlement, getAccessLogs, logAccess, cancelEnrollment, deleteEnrollment } from '@/lib/memberships';
+import { redeemEntitlement, getAccessLogs, logAccess, cancelEnrollment, deleteEnrollment, logTreatment } from '@/lib/memberships';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function MembershipDetailsModal({ enrollment, onClose, onUpdate }) {
@@ -10,6 +10,7 @@ export default function MembershipDetailsModal({ enrollment, onClose, onUpdate }
   const canEdit = profile?.permissions?.gym?.edit !== false;
   const [accessLogs, setAccessLogs] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [treatmentForm, setTreatmentForm] = useState({ service: '', amount: '' });
 
   useEffect(() => {
     const loadLogs = async () => {
@@ -33,6 +34,21 @@ export default function MembershipDetailsModal({ enrollment, onClose, onUpdate }
     await logAccess(enrollment.clientId, enrollment.id, new Date(), profile ? { uid: profile.uid, displayName: profile.name, email: profile.email } : null);
     const logs = await getAccessLogs(enrollment.clientId, new Date().getFullYear());
     setAccessLogs(logs);
+    setLoading(false);
+  };
+
+  const handleLogTreatment = async (e) => {
+    e.preventDefault();
+    if (!treatmentForm.service || !treatmentForm.amount) return;
+    
+    setLoading(true);
+    const result = await logTreatment(enrollment.id, treatmentForm, profile ? { uid: profile.uid, displayName: profile.name, email: profile.email } : null);
+    if (result.success) {
+      setTreatmentForm({ service: '', amount: '' });
+      onUpdate();
+    } else {
+      alert('Error: ' + result.error);
+    }
     setLoading(false);
   };
 
@@ -141,6 +157,12 @@ export default function MembershipDetailsModal({ enrollment, onClose, onUpdate }
               <div className="text-xs text-slate-500 mb-1">Status</div>
               <div className="font-bold capitalize">{enrollment.status || 'Active'}</div>
             </div>
+            {enrollment.isReducingBalance && (
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800 col-span-2">
+                <div className="text-xs text-blue-500 mb-1">Current Balance</div>
+                <div className="text-2xl font-black text-blue-600">${enrollment.balance?.toLocaleString() || 0}</div>
+              </div>
+            )}
           </div>
 
           {profile?.role === 'Admin' && (
@@ -164,10 +186,11 @@ export default function MembershipDetailsModal({ enrollment, onClose, onUpdate }
             </div>
           )}
 
-          <div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Entitlements</h3>
-            <div className="flex flex-wrap gap-2">
-              {enrollment.entitlements?.map((ent, idx) => {
+          {!enrollment.isReducingBalance && (
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Entitlements</h3>
+              <div className="flex flex-wrap gap-2">
+                {enrollment.entitlements?.map((ent, idx) => {
                 // Handle both old string format and new object format
                 const entName = typeof ent === 'string' ? ent : ent.name;
                 const totalQty = typeof ent === 'string' ? 1 : ent.quantity;
@@ -197,10 +220,67 @@ export default function MembershipDetailsModal({ enrollment, onClose, onUpdate }
                     )}
                     {isFullyRedeemed && '✓'}
                   </button>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
+
+          {enrollment.isReducingBalance && (
+            <div className="space-y-4">
+              <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Log Treatment / Service</h3>
+                <form onSubmit={handleLogTreatment} className="flex flex-col sm:flex-row gap-3">
+                  <input
+                    type="text"
+                    required
+                    placeholder="Service name (e.g. Massage)"
+                    value={treatmentForm.service}
+                    onChange={(e) => setTreatmentForm({ ...treatmentForm, service: e.target.value })}
+                    className="flex-1 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <input
+                    type="number"
+                    required
+                    placeholder="Amount"
+                    value={treatmentForm.amount}
+                    onChange={(e) => setTreatmentForm({ ...treatmentForm, amount: e.target.value })}
+                    className="sm:w-32 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <button
+                    type="submit"
+                    disabled={loading || !canEdit}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-all disabled:opacity-50"
+                  >
+                    Log
+                  </button>
+                </form>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Treatment History</h3>
+                <div className="space-y-2">
+                  {enrollment.treatments && enrollment.treatments.length > 0 ? (
+                    [...enrollment.treatments].reverse().map((t, idx) => (
+                      <div key={idx} className="flex justify-between items-center p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 text-sm">
+                        <div>
+                          <div className="font-bold text-slate-900 dark:text-white">{t.service}</div>
+                          <div className="text-[10px] text-slate-500">
+                            {t.date?.toDate ? format(t.date.toDate(), 'MMM d, HH:mm') : 'N/A'} by {t.loggedBy?.name || 'System'}
+                          </div>
+                        </div>
+                        <div className="font-bold text-rose-600">-${t.amount}</div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-4 text-slate-500 text-xs bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+                      No treatments logged yet.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           <div>
             <div className="flex justify-between items-center mb-3">

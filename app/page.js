@@ -387,13 +387,13 @@ export default function Home() {
               </div>
 
               <ClientList
-                clients={searchTerm ? searchResults : getPaginatedClients(allClients)}
+                clients={getPaginatedClients(searchTerm ? searchResults : allClients)}
                 totalCount={searchTerm ? searchResults.length : allClients.length}
                 title={searchTerm ? `Search Results for "${searchTerm}"` : "All Clients"}
                 onClientUpdated={loadData}
               />
 
-              {!searchTerm && allClients.length > clientsPerPage && (
+              {(searchTerm ? searchResults.length : allClients.length) > clientsPerPage && (
                 <div className="flex justify-center items-center gap-2 mt-8">
                   <button
                     disabled={currentPage === 1}
@@ -402,9 +402,11 @@ export default function Home() {
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                   </button>
-                  <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Page {currentPage} of {getTotalPages(allClients)}</span>
+                  <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                    Page {currentPage} of {getTotalPages(searchTerm ? searchResults : allClients)}
+                  </span>
                   <button
-                    disabled={currentPage === getTotalPages(allClients)}
+                    disabled={currentPage === getTotalPages(searchTerm ? searchResults : allClients)}
                     onClick={() => setCurrentPage(p => p + 1)}
                     className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                   >

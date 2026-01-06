@@ -55,6 +55,8 @@ export default function EnrollmentForm({ onEnrolled }) {
       description: selectedType.description,
       durationDays: selectedType.duration,
       entitlements: selectedType.entitlements,
+      isReducingBalance: selectedType.isReducingBalance || false,
+      balance: selectedType.isReducingBalance ? selectedType.price : 0,
       startDate: formData.startDate,
     }, user);
 

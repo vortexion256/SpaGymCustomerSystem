@@ -14,6 +14,7 @@ export default function MembershipForm({ onMembershipAdded }) {
     description: '',
     duration: '',
     entitlements: '',
+    isReducingBalance: false,
   });
 
   const handleSubmit = async (e) => {
@@ -24,7 +25,7 @@ export default function MembershipForm({ onMembershipAdded }) {
       ...formData,
       price: parseFloat(formData.price),
       duration: parseInt(formData.duration),
-      entitlements: formData.entitlements.split(',').map(e => {
+      entitlements: formData.isReducingBalance ? [] : formData.entitlements.split(',').map(e => {
         const item = e.trim();
         if (!item) return null;
         
@@ -44,7 +45,7 @@ export default function MembershipForm({ onMembershipAdded }) {
     }, user);
 
     if (result.success) {
-      setFormData({ type: '', price: '', description: '', duration: '', entitlements: '' });
+      setFormData({ type: '', price: '', description: '', duration: '', entitlements: '', isReducingBalance: false });
       if (onMembershipAdded) onMembershipAdded();
     } else {
       alert('Error: ' + result.error);
@@ -97,12 +98,29 @@ export default function MembershipForm({ onMembershipAdded }) {
           <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Entitlements (e.g. Gym, Pool x5, Sauna)</label>
           <input
             type="text"
-            value={formData.entitlements}
+            disabled={formData.isReducingBalance}
+            value={formData.isReducingBalance ? 'N/A (Reducing Balance)' : formData.entitlements}
             onChange={(e) => setFormData({ ...formData, entitlements: e.target.value })}
-            className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+            className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all disabled:opacity-50"
             placeholder="Gym, Pool x5, Sauna"
           />
         </div>
+      </div>
+
+      <div className="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
+        <input
+          type="checkbox"
+          id="isReducingBalance"
+          checked={formData.isReducingBalance}
+          onChange={(e) => setFormData({ ...formData, isReducingBalance: e.target.checked, entitlements: e.target.checked ? '' : formData.entitlements })}
+          className="w-5 h-5 rounded border-blue-300 text-blue-600 focus:ring-blue-500"
+        />
+        <label htmlFor="isReducingBalance" className="text-sm font-bold text-blue-900 dark:text-blue-100">
+          Reducing Balance Membership
+          <span className="block text-[10px] font-normal text-blue-600 dark:text-blue-400">
+            Instead of entitlements, the price becomes the starting balance for services.
+          </span>
+        </label>
       </div>
 
       <div>
