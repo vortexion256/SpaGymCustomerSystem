@@ -19,6 +19,7 @@ import MembershipList from '@/components/MembershipList';
 import UserManagement from '@/components/UserManagement';
 import UserProfile from '@/components/UserProfile';
 import ActionsTimeline from '@/components/ActionsTimeline';
+import DuplicateSearch from '@/components/DuplicateSearch';
 
 const NavCard = ({ onClick, icon, title, description, badge }) => {
   return (
@@ -298,6 +299,9 @@ export default function Home() {
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                   {profile?.permissions?.clients?.view !== false && (
                     <NavCard onClick={() => setActiveTab('dashboard')} icon="👥" title="Clients" description="Manage customer list." badge={allClients.length} />
+                  )}
+                  {profile?.role === 'Admin' && (
+                    <NavCard onClick={() => setActiveTab('duplicates')} icon="🔍" title="Duplicates" description="Find duplicate phones." />
                   )}
                   {profile?.permissions?.birthdays?.view !== false && (
                     <NavCard onClick={() => setActiveTab('birthdays')} icon="🎂" title="Birthdays" description="Today's celebrations." badge={birthdayBadge} />
@@ -580,6 +584,12 @@ export default function Home() {
           {activeTab === 'timeline' && (
             <div className="space-y-8 animate-in fade-in duration-300">
               <ActionsTimeline />
+            </div>
+          )}
+
+          {activeTab === 'duplicates' && (
+            <div className="space-y-8 animate-in fade-in duration-300">
+              <DuplicateSearch />
             </div>
           )}
 

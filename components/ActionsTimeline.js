@@ -1,18 +1,41 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getTimeline } from '@/lib/timeline';
+import { getTimeline, deleteTimelineEntry } from '@/lib/timeline';
+import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 
 export default function ActionsTimeline() {
+  const { profile } = useAuth();
   const [timeline, setTimeline] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState(null);
+
+  const isAdmin = profile?.role === 'Admin';
 
   const loadTimeline = async () => {
     setLoading(true);
     const data = await getTimeline(100);
     setTimeline(data);
     setLoading(false);
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this timeline entry?')) return;
+    setDeletingId(id);
+    try {
+      const result = await deleteTimelineEntry(id);
+      if (result.success) {
+        setTimeline(prev => prev.filter(item => item.id !== id));
+      } else {
+        alert('Failed to delete entry: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error deleting timeline entry:', error);
+      alert('An error occurred while deleting.');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   useEffect(() => {
@@ -47,6 +70,7 @@ export default function ActionsTimeline() {
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Action</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Target</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Details</th>
+                {isAdmin && <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -76,6 +100,24 @@ export default function ActionsTimeline() {
                     <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
                       {item.details}
                     </td>
+                    {isAdmin && (
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          disabled={deletingId === item.id}
+                          className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-all disabled:opacity-50"
+                          title="Delete Entry"
+                        >
+                          {deletingId === item.id ? (
+                            <div className="w-4 h-4 border-2 border-rose-600/30 border-t-rose-600 rounded-full animate-spin" />
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          )}
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
