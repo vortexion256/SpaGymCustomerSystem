@@ -225,7 +225,7 @@ export default function Home() {
                   if (tab === 'dashboard' && profile?.permissions?.clients?.view === false) return null;
                   if (tab === 'birthdays' && profile?.permissions?.birthdays?.view === false) return null;
                   if (tab === 'gym' && profile?.permissions?.gym?.view === false) return null;
-                  if (tab === 'spa' && profile?.permissions?.gym?.view === false) return null; // Reusing gym view permission
+                  if (tab === 'spa' && profile?.permissions?.spa?.view === false) return null;
                   
                   return (
                     <button
