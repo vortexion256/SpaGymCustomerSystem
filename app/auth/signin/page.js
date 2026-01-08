@@ -48,28 +48,35 @@ export default function SignIn() {
           className="object-cover"
           priority
         />
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px]" />
       </div>
 
       {/* Content Container */}
       <div className="relative z-10 w-full max-w-md px-6">
-        {/* Card: Hidden on mobile (sm: and up only), transparent background on mobile */}
-        <div className="sm:bg-white/90 sm:dark:bg-slate-900/90 sm:backdrop-blur-xl sm:rounded-3xl sm:shadow-2xl sm:border sm:border-white/20 sm:p-10 text-center">
+        {/* Card: Transparent on mobile, blurred on desktop */}
+        <div className="sm:bg-white/10 sm:backdrop-blur-2xl sm:rounded-3xl sm:shadow-2xl sm:border sm:border-white/20 sm:p-10 text-center">
           <div className="mb-10">
-            <div className="w-20 h-20 bg-blue-600 rounded-2xl mx-auto mb-6 flex items-center justify-center shadow-xl shadow-blue-500/30 rotate-3">
-              <span className="text-3xl">🏢</span>
+            {/* Dual Logo Icons */}
+            <div className="flex justify-center -space-x-4 mb-8">
+              <div className="w-16 h-16 rounded-full border-4 border-white/20 bg-white overflow-hidden shadow-2xl rotate-[-6deg] relative z-20">
+                <Image src="/logo1.png" alt="Logo 1" fill className="object-contain p-2" />
+              </div>
+              <div className="w-16 h-16 rounded-full border-4 border-white/20 bg-white overflow-hidden shadow-2xl rotate-[6deg] relative z-10">
+                <Image src="/logo2.png" alt="Logo 2" fill className="object-contain p-2" />
+              </div>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black text-white sm:text-slate-900 sm:dark:text-white mb-4 tracking-tight leading-tight">
+
+            <h1 className="text-3xl sm:text-4xl font-black text-white mb-4 tracking-tight leading-tight">
               SSS & PE <br/>
-              <span className="text-blue-500">Client Mgt System</span>
+              <span className="text-white/90">Client Mgt System</span>
             </h1>
-            <p className="text-lg font-medium text-slate-200 sm:text-slate-500 dark:sm:text-slate-400">
+            <p className="text-lg font-medium text-white/70">
               (Birthdays & Memberships)
             </p>
           </div>
           
           {error && (
-            <div className="mb-6 bg-rose-500/10 border border-rose-500/20 text-rose-500 px-4 py-3 rounded-xl text-sm font-medium animate-shake">
+            <div className="mb-6 bg-rose-500/20 border border-rose-500/30 text-white px-4 py-3 rounded-xl text-sm font-medium">
               {error}
             </div>
           )}
@@ -77,7 +84,7 @@ export default function SignIn() {
           <button
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-4 bg-white hover:bg-slate-50 text-slate-900 border border-slate-200 rounded-2xl px-6 py-4 text-base font-bold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            className="w-full flex items-center justify-center gap-4 bg-white hover:bg-slate-50 text-slate-900 border-none rounded-2xl px-6 py-4 text-base font-bold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-xl"
           >
             {loading ? (
               <svg className="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -107,7 +114,7 @@ export default function SignIn() {
             {loading ? 'Connecting...' : 'Sign in with Google'}
           </button>
 
-          <p className="mt-8 text-sm text-slate-300 sm:text-slate-400 font-medium">
+          <p className="mt-8 text-sm text-white/60 font-medium">
             Secure Access for Authorized Personnel Only
           </p>
         </div>
