@@ -26,28 +26,38 @@ import UserProfile from '@/components/UserProfile';
 import ActionsTimeline from '@/components/ActionsTimeline';
 import DuplicateSearch from '@/components/DuplicateSearch';
 
-const NavCard = ({ onClick, icon, title, description, badge, isImage }) => {
+const NavCard = ({ onClick, icon, title, description, badge, isImage, fullBg }) => {
   return (
     <button
       onClick={onClick}
-      className="group relative flex flex-col items-center justify-center p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1 text-center w-full aspect-square"
+      className={`group relative flex flex-col items-center justify-center p-4 ${fullBg ? 'bg-transparent' : 'bg-white dark:bg-slate-900'} border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1 text-center w-full aspect-square overflow-hidden`}
     >
+      {fullBg && isImage && (
+        <div className="absolute inset-0 z-0">
+          <Image src={icon} alt={title} fill className="object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent z-1" />
+        </div>
+      )}
       {badge !== undefined && (
         <div className="absolute top-3 right-3 min-w-[20px] h-5 px-1.5 flex items-center justify-center bg-blue-600 text-white text-[10px] font-bold rounded-full shadow-lg shadow-blue-500/30 z-10">
           {badge}
         </div>
       )}
-      <div className="mb-3 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition-colors duration-300 group-hover:bg-slate-100 dark:group-hover:bg-slate-700 flex items-center justify-center overflow-hidden">
-        {isImage ? (
-          <div className="w-8 h-8 relative">
-            <Image src={icon} alt={title} fill className="object-contain" />
-          </div>
-        ) : (
-          <span className="text-xl">{icon}</span>
-        )}
+      {!fullBg && (
+        <div className="mb-3 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition-colors duration-300 group-hover:bg-slate-100 dark:group-hover:bg-slate-700 flex items-center justify-center overflow-hidden">
+          {isImage ? (
+            <div className="w-8 h-8 relative">
+              <Image src={icon} alt={title} fill className="object-contain" />
+            </div>
+          ) : (
+            <span className="text-xl">{icon}</span>
+          )}
+        </div>
+      )}
+      <div className={`relative z-10 ${fullBg ? 'mt-auto' : ''}`}>
+        <h3 className={`text-sm font-bold ${fullBg ? 'text-white' : 'text-slate-900 dark:text-white'} mb-1`}>{title}</h3>
+        <p className={`text-[10px] ${fullBg ? 'text-slate-200' : 'text-slate-500 dark:text-slate-400'} leading-tight line-clamp-2 px-1`}>{description}</p>
       </div>
-      <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">{title}</h3>
-      <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight line-clamp-2 px-1">{description}</p>
     </button>
   );
 };
@@ -311,13 +321,13 @@ export default function Home() {
                   {!showAdminSection ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                   {profile?.permissions?.clients?.view !== false && (
-                    <NavCard onClick={() => setActiveTab('dashboard')} icon="👥" title="Clients" description="Manage customer list." badge={allClients.length} />
+                    <NavCard onClick={() => setActiveTab('dashboard')} icon="/clients.png" title="Clients" description="Manage customer list." badge={allClients.length} isImage={true} fullBg={true} />
                   )}
                   {profile?.role === 'Admin' && (
                     <NavCard onClick={() => setActiveTab('duplicates')} icon="🔍" title="Duplicates" description="Find duplicate phones." />
                   )}
                   {profile?.permissions?.birthdays?.view !== false && (
-                    <NavCard onClick={() => setActiveTab('birthdays')} icon="/birthday.png" title="Birthdays" description="Today's celebrations." badge={birthdayBadge} isImage={true} />
+                    <NavCard onClick={() => setActiveTab('birthdays')} icon="/birthday.png" title="Birthdays" description="Today's celebrations." badge={birthdayBadge} isImage={true} fullBg={true} />
                   )}
                   {profile?.permissions?.branches?.view !== false && (
                     <NavCard onClick={() => setActiveTab('branches')} icon="🏢" title="Branches" description="Manage locations." badge={branches.length} />
