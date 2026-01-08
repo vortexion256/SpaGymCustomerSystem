@@ -55,8 +55,8 @@ const NavCard = ({ onClick, icon, title, description, badge, isImage, fullBg }) 
         </div>
       )}
       <div className={`relative z-10 ${fullBg ? 'mt-auto' : ''}`}>
-        <h3 className={`text-sm font-bold ${fullBg ? 'text-white' : 'text-slate-900 dark:text-white'} mb-1`}>{title}</h3>
-        <p className={`text-[10px] ${fullBg ? 'text-slate-200' : 'text-slate-500 dark:text-slate-400'} leading-tight line-clamp-2 px-1`}>{description}</p>
+        <h3 className={`text-lg font-bold ${fullBg ? 'text-white' : 'text-slate-900 dark:text-white'} mb-1`}>{title}</h3>
+        <p className={`text-sm ${fullBg ? 'text-slate-200' : 'text-slate-500 dark:text-slate-400'} leading-tight line-clamp-2 px-1`}>{description}</p>
       </div>
     </button>
   );
@@ -333,10 +333,10 @@ export default function Home() {
                     <NavCard onClick={() => setActiveTab('branches')} icon="🏢" title="Branches" description="Manage locations." badge={branches.length} />
                   )}
                   {profile?.permissions?.gym?.view !== false && (
-                    <NavCard onClick={() => setActiveTab('gym')} icon="🏋️" title="GYM" description="Memberships." />
+                    <NavCard onClick={() => setActiveTab('gym')} icon="/gym_bg.jpg" title="GYM" description="Memberships." isImage={true} fullBg={true} />
                   )}
                   {profile?.permissions?.spa?.view !== false && (
-                    <NavCard onClick={() => setActiveTab('spa')} icon="/spa.png" title="SPA" description="Memberships." isImage={true} />
+                    <NavCard onClick={() => setActiveTab('spa')} icon="/spa_bg.jpg" title="SPA" description="Memberships." isImage={true} fullBg={true} />
                   )}
                   {profile?.role === 'Admin' && (
                     <NavCard onClick={() => setShowAdminSection(true)} icon="⚙️" title="Admin" description="System tools." />
